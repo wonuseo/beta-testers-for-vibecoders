@@ -1,0 +1,60 @@
+{
+  "$comment": "Schema for a single persona object. Used in .code-beta/personas.json (array of these) or generated at runtime.",
+  "type": "object",
+  "required": ["id", "name", "description", "entryPoint", "goal", "constraints"],
+  "properties": {
+    "id": {
+      "$comment": "Hyphenated slug. Unique within a run. Used in report filenames and rubric tables.",
+      "type": "string",
+      "example": "returning-mobile-user"
+    },
+    "name": {
+      "$comment": "Human-readable display name.",
+      "type": "string",
+      "example": "Returning Mobile User"
+    },
+    "description": {
+      "$comment": "2-3 sentences: who this person is, what they want, what state they're in.",
+      "type": "string",
+      "example": "A user who signed up two weeks ago and is returning to the app after their session token expired. They're on an iPhone using Safari. They want to resume where they left off without having to remember their password."
+    },
+    "entryPoint": {
+      "$comment": "The specific code surface or UI flow where this persona enters the changed feature.",
+      "type": "string",
+      "example": "POST /api/auth/refresh — called automatically by the client when a 401 is received"
+    },
+    "goal": {
+      "$comment": "One sentence: what outcome the persona is trying to achieve.",
+      "type": "string",
+      "example": "Resume their session transparently without being redirected to the login page"
+    },
+    "constraints": {
+      "$comment": "Array of constraints that distinguish this persona from others: device, permission level, data state, etc.",
+      "type": "array",
+      "items": { "type": "string" },
+      "example": [
+        "iOS Safari — virtual keyboard overlaps lower UI elements",
+        "Expired access token but valid refresh token in httpOnly cookie",
+        "No password manager installed"
+      ]
+    },
+    "inferredFrom": {
+      "$comment": "Explains which codebase signals led to this persona being inferred. Omit in hand-authored .code-beta/personas.json.",
+      "type": "string",
+      "example": "session.ts line 47 checks refresh token validity; middleware/auth.ts has iOS Safari UA detection"
+    }
+  },
+  "example": {
+    "id": "returning-mobile-user",
+    "name": "Returning Mobile User",
+    "description": "A user who signed up two weeks ago and is returning after their session expired. On iPhone Safari. Wants to resume without re-entering their password.",
+    "entryPoint": "POST /api/auth/refresh — triggered automatically by the SWR client on 401",
+    "goal": "Resume session transparently without hitting the login page",
+    "constraints": [
+      "iOS Safari — virtual keyboard overlaps lower UI elements",
+      "Has a valid refresh token in httpOnly cookie",
+      "Access token expired 2 hours ago"
+    ],
+    "inferredFrom": "session.ts:47 refresh logic, middleware/auth.ts iOS Safari UA check"
+  }
+}

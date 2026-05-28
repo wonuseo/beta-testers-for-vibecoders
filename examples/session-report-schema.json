@@ -1,0 +1,133 @@
+{
+  "$comment": "Schema for a complete /code-beta session report. Written to docs/beta-sessions/YYYY-MM-DD-HH-MM.md as markdown; this JSON schema describes the underlying data model.",
+  "type": "object",
+  "required": ["sessionId", "timestamp", "diffSummary", "personas", "rubrics", "initialResults", "finalResults", "gapClosure"],
+  "properties": {
+    "sessionId": {
+      "$comment": "Filename-safe identifier, e.g. 2026-05-29-14-32.",
+      "type": "string"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "diffSummary": {
+      "type": "object",
+      "properties": {
+        "range": { "type": "string", "example": "HEAD~1..HEAD" },
+        "filesChanged": { "type": "integer", "example": 3 },
+        "files": {
+          "type": "array",
+          "items": { "type": "string" },
+          "example": ["auth/session.ts", "ui/LoginForm.tsx", "api/session.ts"]
+        },
+        "changeType": {
+          "$comment": "feature | fix | refactor | config | mixed",
+          "type": "string",
+          "example": "fix"
+        },
+        "affectedAreas": {
+          "type": "array",
+          "items": { "type": "string" },
+          "example": ["authentication", "session management", "login UI"]
+        }
+      }
+    },
+    "codebaseContext": {
+      "type": "object",
+      "properties": {
+        "appType": { "type": "string", "example": "Next.js SaaS web app" },
+        "stack": { "type": "string", "example": "TypeScript, Next.js 14, Prisma, PostgreSQL" },
+        "likelyUserTypes": {
+          "type": "array",
+          "items": { "type": "string" },
+          "example": ["end users", "API consumers", "admins"]
+        }
+      }
+    },
+    "personas": {
+      "$comment": "Array of persona objects (see persona-schema.json).",
+      "type": "array",
+      "items": { "$ref": "persona-schema.json" }
+    },
+    "rubrics": {
+      "$comment": "One rubric per persona (see rubric-schema.json).",
+      "type": "array",
+      "items": { "$ref": "rubric-schema.json" }
+    },
+    "initialResults": {
+      "type": "object",
+      "properties": {
+        "totalCriteria": { "type": "integer" },
+        "passing": { "type": "integer" },
+        "failing": { "type": "integer" },
+        "unclear": { "type": "integer" },
+        "perPersona": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "personaId": { "type": "string" },
+              "passing": { "type": "integer" },
+              "total": { "type": "integer" },
+              "failingCriteria": {
+                "type": "array",
+                "items": { "type": "string" },
+                "$comment": "criterion IDs that failed"
+              }
+            }
+          }
+        },
+        "evidenceReports": {
+          "$comment": "Full prose evidence output from each persona subagent, keyed by personaId.",
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
+      }
+    },
+    "fixProposals": {
+      "$comment": "null if gap was 0 or fixes were declined.",
+      "type": ["array", "null"],
+      "items": {
+        "type": "object",
+        "properties": {
+          "criteriaAddressed": {
+            "type": "array",
+            "items": { "type": "string" },
+            "$comment": "criterion IDs this fix addresses"
+          },
+          "file": { "type": "string" },
+          "description": { "type": "string" },
+          "proposalFile": { "type": "string", "$comment": "path to fix-proposals markdown file" }
+        }
+      }
+    },
+    "fixesApplied": {
+      "$comment": "true if --fix or user consented; false if declined.",
+      "type": "boolean"
+    },
+    "finalResults": {
+      "$comment": "Same structure as initialResults. Equal to initialResults if fixes were not applied.",
+      "type": "object",
+      "$ref": "#/properties/initialResults"
+    },
+    "gapClosure": {
+      "type": "object",
+      "properties": {
+        "initialGap": { "type": "integer", "$comment": "number of failing criteria before fixes" },
+        "finalGap": { "type": "integer", "$comment": "number of failing criteria after fixes (or same as initial if not applied)" },
+        "closed": { "type": "boolean" },
+        "confidence": {
+          "$comment": "high | medium | low — based on how much of the evaluation was static vs. UNCLEAR",
+          "type": "string",
+          "enum": ["high", "medium", "low"]
+        },
+        "requiresHumanReview": { "type": "boolean" },
+        "humanReviewReasons": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}

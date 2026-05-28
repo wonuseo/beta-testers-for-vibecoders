@@ -1,0 +1,73 @@
+{
+  "$comment": "Schema for a rubric — the set of acceptance criteria for one persona against one diff.",
+  "type": "object",
+  "required": ["personaId", "diffRef", "criteria"],
+  "properties": {
+    "personaId": {
+      "$comment": "Matches persona.id from persona-schema.json.",
+      "type": "string",
+      "example": "returning-mobile-user"
+    },
+    "diffRef": {
+      "$comment": "Git range or commit SHA this rubric was generated for.",
+      "type": "string",
+      "example": "HEAD~1..HEAD"
+    },
+    "criteria": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "required": ["id", "statement", "rationale"],
+        "properties": {
+          "id": {
+            "$comment": "Short slug for referencing in evidence and fix proposals.",
+            "type": "string",
+            "example": "refresh-transparent"
+          },
+          "statement": {
+            "$comment": "The criterion itself. Format: [persona] [action] → [observable outcome]. Must be falsifiable from static code reading.",
+            "type": "string",
+            "example": "returning-mobile-user's expired token → refresh happens transparently; user is not redirected to /login"
+          },
+          "rationale": {
+            "$comment": "One sentence: why this criterion matters for this persona and this diff.",
+            "type": "string",
+            "example": "The diff changes session.ts refresh logic; a regression here silently logs out returning users."
+          },
+          "changedFiles": {
+            "$comment": "Which changed files are most relevant to evaluating this criterion.",
+            "type": "array",
+            "items": { "type": "string" },
+            "example": ["session.ts", "api/session.ts"]
+          }
+        }
+      }
+    }
+  },
+  "example": {
+    "personaId": "returning-mobile-user",
+    "diffRef": "HEAD~1..HEAD",
+    "criteria": [
+      {
+        "id": "refresh-transparent",
+        "statement": "returning-mobile-user's expired token → refresh call succeeds silently; no /login redirect",
+        "rationale": "Core session.ts change; a regression here logs out returning users without warning.",
+        "changedFiles": ["session.ts", "api/session.ts"]
+      },
+      {
+        "id": "refresh-race-safe",
+        "statement": "concurrent refresh calls → only one refresh executes; subsequent calls wait and reuse the result",
+        "rationale": "Diff adds a mutex; without it, parallel requests trigger multiple refresh attempts and may revoke each other.",
+        "changedFiles": ["session.ts"]
+      },
+      {
+        "id": "error-fallback",
+        "statement": "refresh token expired → user is redirected to /login with a clear message, not a silent blank page",
+        "rationale": "Ensures graceful degradation when refresh is impossible.",
+        "changedFiles": ["session.ts", "ui/SessionGuard.tsx"]
+      }
+    ]
+  }
+}
