@@ -39,11 +39,24 @@ Everything else in this repo (docs, examples, schemas) supports development of t
 
 ## Testing this harness
 
-1. Pick any repo with a recent diff.
-2. Copy the current `.claude/commands/code-beta.md` and `.claude/skills/code-beta-harness.md` into that repo's `.claude/` directories.
-3. Run `/code-beta --diff HEAD~1..HEAD` in Claude Code from that repo.
-4. Evaluate: did persona inference make sense? Were rubrics specific? Was evidence useful? Did scoring feel right?
-5. Iterate on the harness files.
+**Reference scenario (recommended baseline):** Use this repo's own scaffold diff. It is a known test case with a written expected output in `examples/sample-run.md` and session reports under `docs/beta-sessions/`. Any change to the command or skill files should be validated against this scenario first.
+
+```bash
+# From this repo, run the harness on the scaffold commit range
+# (manual invocation — paste into Claude Code chat):
+# "Read .claude/commands/code-beta.md and .claude/skills/code-beta-harness.md,
+#  then follow the workflow on the diff HEAD~2..HEAD."
+```
+
+**Steps:**
+
+1. Make your change to `.claude/commands/code-beta.md` or `.claude/skills/code-beta-harness.md`.
+2. Use the **manual invocation fallback** (see README Troubleshooting) — paste the read+follow instruction into Claude Code chat with diff `HEAD~2..HEAD`. This avoids needing to restart your session.
+3. Compare: did persona inference produce 4 personas similar to the baseline? Were rubrics specific and falsifiable? Did scoring match the expected gaps?
+4. Check the session report written to `docs/beta-sessions/` — compare gap closure to the baseline session.
+5. If results diverge significantly from baseline, your change may have regressed persona quality. Investigate before committing.
+
+**Quality reference:** Use `examples/sample-run.md` as the template for what good output looks like (correct persona count, specific rubric criteria, code-cited evidence). Once a real session exists at `docs/beta-sessions/2026-05-29-*.md`, that becomes the reproducible baseline — compare persona names, rubric count, and gap result against it.
 
 ## What's out of scope (for now)
 

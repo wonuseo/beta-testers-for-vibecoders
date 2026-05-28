@@ -71,15 +71,35 @@ Ship a working `/code-beta` command that a vibe-coder can drop into any repo and
 - Markdown summary suitable for posting as a PR comment (GitHub Actions hook)
 - Exit code: 0 if gap closed, 1 if gap remains (enables CI gating)
 
-**CI integration pattern:**
+**CI integration pattern (Phase 4 — not yet implemented):**
+
+> **Status:** The `--scope` flag and exit code support are not yet implemented. The YAML below shows the intended pattern. Today, `claude -p` always exits 0 — CI gating on gap requires parsing the output until exit code support ships.
+
 ```yaml
-# .github/workflows/beta-test.yml
+# .github/workflows/beta-test.yml  (Phase 4 target — not yet functional)
 - name: Run /code-beta
   run: |
     claude -p "/code-beta --diff ${{ github.base_ref }}...${{ github.head_ref }}" \
            --output-format markdown > beta-report.md
-  # Posts report as PR comment; fails CI if gap > 0
+    # Phase 4: claude will exit 1 when gap > 0.
+    # Until then, gate on grep: grep -q "Gap closed: no" beta-report.md && exit 1 || exit 0
+
+- name: Post beta-report as PR comment
+  if: always()
+  uses: actions/github-script@v7
+  with:
+    script: |
+      const fs = require('fs');
+      const report = fs.readFileSync('beta-report.md', 'utf8');
+      github.rest.issues.createComment({
+        issue_number: context.issue.number,
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        body: report
+      });
 ```
+
+**Manual CI gating (works today):** Until Phase 4 ships exit codes, use the grep fallback shown in the YAML comment: check whether the session report contains `"Gap closed: no"` and fail the step if so.
 
 ---
 

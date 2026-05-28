@@ -31,7 +31,7 @@ cp .claude/commands/code-beta.md   /your-project/.claude/commands/code-beta.md
 cp .claude/skills/code-beta-harness.md  /your-project/.claude/skills/code-beta-harness.md
 ```
 
-**Run it inside Claude Code on your project:**
+**Open a new Claude Code session, then run:**
 
 ```
 /code-beta                         # test current staged diff
@@ -40,6 +40,24 @@ cp .claude/skills/code-beta-harness.md  /your-project/.claude/skills/code-beta-h
 /code-beta --personas custom       # use .code-beta/personas.json instead of inferring
 /code-beta --scope auth            # narrow to a named feature area
 ```
+
+> **Important:** Claude Code only discovers command files at session start. If you copied the files into an already-open session, `/code-beta` won't be available until you start a new session.
+
+## Troubleshooting
+
+**`/code-beta` shows as unknown command**
+
+Claude Code registers slash commands from `.claude/commands/` only when a session starts. If you added the file mid-session, you have two options:
+
+**Option 1 — Restart the session** (recommended): Close and reopen Claude Code in your project directory. `/code-beta` will be available immediately.
+
+**Option 2 — Invoke manually without restarting**: Paste this into the Claude Code chat:
+
+```
+Read .claude/commands/code-beta.md and .claude/skills/code-beta-harness.md, then follow the workflow defined in code-beta.md on the diff HEAD~1..HEAD.
+```
+
+The manual fallback works because the command file is plain instructions that Claude can read and follow directly, even without slash command registration. This repo's own first beta test was run this way.
 
 ## Example session
 

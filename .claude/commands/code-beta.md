@@ -17,7 +17,13 @@ Options:
 
 ## Workflow
 
-Follow these steps in order. Use the `code-beta-harness` skill for the methodology behind each step.
+**Before executing any step:** Read `.claude/skills/code-beta-harness.md` in full. All references to "the methodology" below point to sections in that file. Reading it now avoids missing-skill errors if the file was added mid-session or the skill is not registered.
+
+```
+Read: .claude/skills/code-beta-harness.md
+```
+
+Follow these steps in order.
 
 ---
 
