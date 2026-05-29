@@ -1,7 +1,18 @@
 {
   "$comment": "Schema for a complete /code-beta session report. Written to docs/beta-sessions/YYYY-MM-DD-HH-MM.md as markdown; this JSON schema describes the underlying data model.",
   "type": "object",
-  "required": ["sessionId", "timestamp", "diffSummary", "betaPlan", "testerRecruitment", "activities", "rubrics", "initialResults", "finalResults", "gapClosure"],
+  "required": [
+    "sessionId",
+    "timestamp",
+    "diffSummary",
+    "betaPlan",
+    "testerRecruitment",
+    "activities",
+    "rubrics",
+    "initialResults",
+    "finalResults",
+    "gapClosure"
+  ],
   "properties": {
     "sessionId": {
       "$comment": "Filename-safe identifier, e.g. 2026-05-29-14-32.",
@@ -14,12 +25,24 @@
     "diffSummary": {
       "type": "object",
       "properties": {
-        "range": { "type": "string", "example": "HEAD~1..HEAD" },
-        "filesChanged": { "type": "integer", "example": 3 },
+        "range": {
+          "type": "string",
+          "example": "HEAD~1..HEAD"
+        },
+        "filesChanged": {
+          "type": "integer",
+          "example": 3
+        },
         "files": {
           "type": "array",
-          "items": { "type": "string" },
-          "example": ["README.md", ".claude/commands/code-beta.md", ".claude/skills/code-beta-harness.md"]
+          "items": {
+            "type": "string"
+          },
+          "example": [
+            "README.md",
+            ".claude/commands/code-beta.md",
+            ".claude/skills/code-beta-harness.md"
+          ]
         },
         "changeType": {
           "$comment": "feature | fix | refactor | config | docs | harness | mixed",
@@ -28,85 +51,280 @@
         },
         "affectedAreas": {
           "type": "array",
-          "items": { "type": "string" },
-          "example": ["beta setup", "tester recruitment", "evidence schema"]
+          "items": {
+            "type": "string"
+          },
+          "example": [
+            "beta setup",
+            "tester recruitment",
+            "evidence schema"
+          ]
         }
       }
     },
     "betaPlan": {
       "type": "object",
-      "required": ["objective", "betaType", "surfaces", "outOfScope", "exitCriteria"],
+      "required": [
+        "objective",
+        "bestCasePath",
+        "betaType",
+        "surfaces",
+        "outOfScope",
+        "exitCriteria"
+      ],
       "properties": {
-        "objective": { "type": "string" },
-        "betaType": { "type": "string", "example": "focused-technical-closed" },
-        "surfaces": { "type": "array", "items": { "type": "string" } },
-        "outOfScope": { "type": "array", "items": { "type": "string" } },
-        "primaryRisks": { "type": "array", "items": { "type": "string" } },
-        "evidenceSchema": { "type": "array", "items": { "type": "string" } },
-        "exitCriteria": { "type": "array", "items": { "type": "string" } }
+        "objective": {
+          "type": "string"
+        },
+        "betaType": {
+          "type": "string",
+          "example": "focused-technical-closed"
+        },
+        "surfaces": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "outOfScope": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "primaryRisks": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidenceSchema": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "exitCriteria": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "bestCasePath": {
+          "type": "object",
+          "required": [
+            "primaryUser",
+            "happyPath",
+            "valueDelivered",
+            "successSignal"
+          ],
+          "properties": {
+            "primaryUser": {
+              "type": "string"
+            },
+            "happyPath": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 3
+            },
+            "valueDelivered": {
+              "type": "string"
+            },
+            "successSignal": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "validated",
+                "partially_validated",
+                "not_validated"
+              ]
+            }
+          }
+        }
       }
     },
     "modelPolicy": {
       "type": "object",
       "properties": {
-        "plannerModel": { "type": "string", "example": "opus" },
-        "recruiterModel": { "type": "string", "example": "opus" },
-        "defaultTesterModel": { "type": "string", "example": "haiku" },
-        "escalationModel": { "type": "string", "example": "sonnet" },
-        "aggregatorModel": { "type": "string", "example": "sonnet" },
-        "runtimeEnforced": { "type": "boolean" }
+        "plannerModel": {
+          "type": "string",
+          "example": "opus"
+        },
+        "recruiterModel": {
+          "type": "string",
+          "example": "opus"
+        },
+        "defaultTesterModel": {
+          "type": "string",
+          "example": "haiku"
+        },
+        "escalationModel": {
+          "type": "string",
+          "example": "sonnet"
+        },
+        "aggregatorModel": {
+          "type": "string",
+          "example": "sonnet"
+        },
+        "runtimeEnforced": {
+          "type": "boolean"
+        }
       }
     },
     "testerRecruitment": {
       "$comment": "Array of recruited tester objects (see persona-schema.json).",
       "type": "array",
-      "items": { "$ref": "persona-schema.json" }
+      "items": {
+        "$ref": "persona-schema.json"
+      }
     },
     "activities": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["activityId", "testerId", "task", "allowedContext", "evidenceRequired"],
+        "required": [
+          "activityId",
+          "testerId",
+          "role",
+          "task",
+          "allowedContext",
+          "evidenceRequired"
+        ],
         "properties": {
-          "activityId": { "type": "string" },
-          "testerId": { "type": "string" },
-          "task": { "type": "string" },
-          "allowedContext": { "type": "array", "items": { "type": "string" } },
-          "forbiddenContext": { "type": "array", "items": { "type": "string" } },
-          "evidenceRequired": { "type": "array", "items": { "type": "string" } }
+          "activityId": {
+            "type": "string"
+          },
+          "testerId": {
+            "type": "string"
+          },
+          "task": {
+            "type": "string"
+          },
+          "allowedContext": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "forbiddenContext": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "evidenceRequired": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "happy_path_validation",
+              "edge_case_probe",
+              "developer_insight"
+            ]
+          }
         }
       }
     },
     "rubrics": {
       "$comment": "One rubric per tester/activity (see rubric-schema.json).",
       "type": "array",
-      "items": { "$ref": "rubric-schema.json" }
+      "items": {
+        "$ref": "rubric-schema.json"
+      }
     },
     "initialResults": {
       "type": "object",
       "properties": {
-        "totalCriteria": { "type": "integer" },
-        "passing": { "type": "integer" },
-        "failing": { "type": "integer" },
-        "unclear": { "type": "integer" },
+        "totalCriteria": {
+          "type": "integer"
+        },
+        "passing": {
+          "type": "integer"
+        },
+        "failing": {
+          "type": "integer"
+        },
+        "unclear": {
+          "type": "integer"
+        },
         "perTester": {
           "type": "array",
           "items": {
             "type": "object",
             "properties": {
-              "testerId": { "type": "string" },
-              "activityId": { "type": "string" },
-              "passing": { "type": "integer" },
-              "total": { "type": "integer" },
-              "failingCriteria": { "type": "array", "items": { "type": "string" } },
-              "unclearCriteria": { "type": "array", "items": { "type": "string" } }
+              "testerId": {
+                "type": "string"
+              },
+              "activityId": {
+                "type": "string"
+              },
+              "passing": {
+                "type": "integer"
+              },
+              "total": {
+                "type": "integer"
+              },
+              "failingCriteria": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "unclearCriteria": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "role": {
+                "type": "string",
+                "enum": [
+                  "happy_path_validation",
+                  "edge_case_probe",
+                  "developer_insight"
+                ]
+              },
+              "edgeCases": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "missedRisks": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "goodSigns": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "ideasSparked": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
             }
           }
         },
         "evidenceReports": {
           "$comment": "Full prose evidence output from each tester subagent, keyed by testerId.",
           "type": "object",
-          "additionalProperties": { "type": "string" }
+          "additionalProperties": {
+            "type": "string"
+          }
         }
       }
     },
@@ -115,25 +333,59 @@
       "items": {
         "type": "object",
         "properties": {
-          "findingId": { "type": "string" },
-          "testerId": { "type": "string" },
-          "severity": { "type": "string", "enum": ["P0", "P1", "P2", "P3"] },
-          "classification": { "type": "string" },
-          "action": { "type": "string", "example": "fix before merge" },
-          "escalatedToSonnet": { "type": "boolean" }
+          "findingId": {
+            "type": "string"
+          },
+          "testerId": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "P0",
+              "P1",
+              "P2",
+              "P3"
+            ]
+          },
+          "classification": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string",
+            "example": "fix before merge"
+          },
+          "escalatedToSonnet": {
+            "type": "boolean"
+          }
         }
       }
     },
     "fixProposals": {
       "$comment": "null if gap was 0 or fixes were declined.",
-      "type": ["array", "null"],
+      "type": [
+        "array",
+        "null"
+      ],
       "items": {
         "type": "object",
         "properties": {
-          "criteriaAddressed": { "type": "array", "items": { "type": "string" } },
-          "file": { "type": "string" },
-          "description": { "type": "string" },
-          "proposalFile": { "type": "string", "$comment": "path to fix-proposals markdown file" }
+          "criteriaAddressed": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "file": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "proposalFile": {
+            "type": "string",
+            "$comment": "path to fix-proposals markdown file"
+          }
         }
       }
     },
@@ -149,12 +401,71 @@
     "gapClosure": {
       "type": "object",
       "properties": {
-        "initialGap": { "type": "integer", "$comment": "number of failing/unclear criteria before fixes" },
-        "finalGap": { "type": "integer", "$comment": "number of failing/unclear criteria after fixes or decisions" },
-        "closed": { "type": "boolean" },
-        "confidence": { "type": "string", "enum": ["high", "medium", "low"] },
-        "requiresHumanReview": { "type": "boolean" },
-        "humanReviewReasons": { "type": "array", "items": { "type": "string" } }
+        "initialGap": {
+          "type": "integer",
+          "$comment": "number of failing/unclear criteria before fixes"
+        },
+        "finalGap": {
+          "type": "integer",
+          "$comment": "number of failing/unclear criteria after fixes or decisions"
+        },
+        "closed": {
+          "type": "boolean"
+        },
+        "confidence": {
+          "type": "string",
+          "enum": [
+            "high",
+            "medium",
+            "low"
+          ]
+        },
+        "requiresHumanReview": {
+          "type": "boolean"
+        },
+        "humanReviewReasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "insightSummary": {
+      "type": "object",
+      "properties": {
+        "bestCaseStatus": {
+          "type": "string",
+          "enum": [
+            "validated",
+            "partially_validated",
+            "not_validated"
+          ]
+        },
+        "personaEdgeCases": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "missedRisks": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "goodSigns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "ideasSparked": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
       }
     }
   }

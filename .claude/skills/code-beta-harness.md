@@ -5,7 +5,7 @@ This skill defines the methodology used by `/code-beta`. The command orchestrate
 The core loop is:
 
 ```text
-plan beta → recruit testers → assign activities → collect evidence → triage → fix/accept/defer → rerun → exit decision
+plan beta → define best-case path → recruit testers → assign happy-path and edge-case activities → collect evidence and developer insight → triage → fix/accept/defer → rerun → exit decision
 ```
 
 ---
@@ -35,6 +35,12 @@ A valid beta plan includes:
 ```json
 {
   "objective": "What hypothesis or release risk this beta validates",
+  "best_case_path": {
+    "primary_user": "Who benefits most if this works",
+    "happy_path": ["Step 1", "Step 2", "Step 3"],
+    "value_delivered": "What becomes easier, safer, or faster",
+    "success_signal": "What evidence would prove the happy path is real"
+  },
   "beta_type": "focused-technical-closed",
   "target_diff": "HEAD~1..HEAD",
   "surfaces": ["CLI onboarding", "slash command registration", "manual fallback"],
@@ -57,6 +63,22 @@ Bad objectives are vague:
 - "Check quality."
 - "Find bugs."
 - "Review the code."
+
+### Best-case path definition
+
+Every beta plan must define the optimistic path before hunting for edge cases. This keeps the harness useful even when no bug is found.
+
+A strong best-case path answers:
+- **Primary user:** who benefits most if the change works?
+- **Happy path:** what 3–7 steps should feel smooth?
+- **Value delivered:** what becomes easier, safer, faster, clearer, or more reliable?
+- **Success signal:** what would convince the developer this path is real, not just imagined?
+
+Good examples:
+- "A first-time vibe coder copies the harness, starts a new Claude Code session, runs `/code-beta`, and receives a concise ship/no-ship report without reading internals."
+- "A maintainer reads a generated beta report and immediately sees one docs gap, one non-blocking edge case, and one good design choice to preserve."
+
+The best-case path is not a sales pitch. It is the reference path that testers validate, bend, and challenge.
 
 ---
 
@@ -159,6 +181,7 @@ A beta activity is a task that mirrors real beta testing:
 {
   "activity_id": "install-and-run-command",
   "tester_id": "first-time-cli-user",
+  "role": "happy_path_validation",
   "task": "Start from README, copy the harness into a project, then attempt to run /code-beta on HEAD~1..HEAD.",
   "starting_context": ["README.md"],
   "allowed_context": ["README.md", "examples/", ".claude/commands/code-beta.md only if discovered through docs"],
@@ -175,12 +198,25 @@ A good activity:
 - has an observable completion condition
 - fits the tester's prior knowledge and context policy
 - is tied to a changed surface
+- has a clear role: `happy_path_validation`, `edge_case_probe`, or `developer_insight`
 
 A bad activity:
 - asks the tester to inspect everything
 - depends on hidden implementation knowledge
 - asks for a generic code review
 - has no reproducible evidence requirement
+
+### Activity roles
+
+Use a mix of activity roles so the harness is not only a bug-finder:
+
+| Role | Purpose | Example |
+|---|---|---|
+| `happy_path_validation` | Confirm the best-case path is coherent and valuable | first-time user follows README and gets a useful report |
+| `edge_case_probe` | Find persona-specific confusion, misuse, environment mismatch, or docs gaps | CI integrator checks whether examples imply unsupported exit-code behavior |
+| `developer_insight` | Surface good signs, product ideas, and risks the developer may have missed | maintainer evaluates whether the report format creates actionable next steps |
+
+At least one tester should validate the best-case path. At least one tester should probe edge cases. For small `--testers 3` runs, the third tester can be either deep technical risk or developer insight depending on the diff.
 
 ---
 
@@ -227,6 +263,7 @@ Key prompting principles:
 5. **Require evidence.** FAIL/UNCLEAR requires file:line, docs quote, command output, or explicit missing-context note.
 6. **Require reproduction.** Failures without reproduction are not actionable.
 7. **No speculation.** If runtime behavior is not determinable, mark UNCLEAR and explain the missing condition.
+8. **Always return insight.** Even if everything passes, report one edge case, missed risk, good sign, or idea. If none exists, explicitly say `none found` and why.
 
 ### Subagent scope
 
@@ -240,6 +277,29 @@ Forbidden by default:
 - entire repo scan
 - unrelated tests/docs
 - prior beta session reports unless the activity is maintainer baseline comparison
+
+---
+
+## Developer Insight Capture
+
+**Goal:** Make every run useful to the developer, even when no blocker appears.
+
+Each tester report should include:
+
+```json
+{
+  "persona_specific_edge_case": "A plausible edge case this tester would hit, or none found",
+  "missed_risk": "A risk the developer may not have considered, or none found",
+  "good_sign": "A robust or valuable aspect worth preserving",
+  "idea_sparked": "Optional improvement idea discovered during the activity"
+}
+```
+
+Guidelines:
+- Keep insights grounded in the activity and allowed context.
+- Do not turn `idea_sparked` into scope creep; mark it as optional unless it blocks the best-case path.
+- `good_sign` matters. Developers need to know what not to break in the next iteration.
+- Persona-specific edge cases can be side conclusions, not necessarily release blockers.
 
 ---
 
@@ -278,9 +338,16 @@ Forbidden by default:
 
 ## Triage and Exit Decision
 
-**Goal:** Convert feedback flood into release decisions.
+**Goal:** Convert feedback flood into release decisions while preserving useful product/developer insight.
 
-Classify each finding:
+Before blocker triage, summarize:
+- best-case path status: validated / partially validated / not validated
+- persona-specific edge cases worth knowing
+- missed risks that are not yet proven blockers
+- good signs worth preserving
+- ideas sparked that may improve the next iteration
+
+Then classify each finding:
 - code defect
 - docs/UX gap
 - missing test

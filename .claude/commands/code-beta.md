@@ -3,7 +3,7 @@
 Run a Claude Code-native beta program on a code diff. The harness now has two layers:
 
 1. **Setup / recruitment** — decide what should be beta-tested and recruit the right synthetic testers.
-2. **Run / evidence loop** — execute concrete beta activities, collect evidence, triage gaps, and rerun failures.
+2. **Run / evidence loop** — define the best-case path, execute concrete beta activities, collect edge-case evidence, surface developer insight, triage gaps, and rerun failures.
 
 No external services. The product surface is the Claude Code slash command plus this skill file.
 
@@ -108,12 +108,25 @@ Using the methodology sections **Beta Program Setup** and **Beta Type Selection*
 
 The beta plan must include:
 - beta objective / hypothesis
+- best-case scenario: the ideal user journey or developer outcome this change should enable
 - beta type: closed, focused, technical, open-like breadth, marketing/docs, post-release/staged, or hybrid
 - surfaces to test
 - explicit out-of-scope areas
 - core beta activities
 - evidence schema
 - exit criteria
+
+Before recruiting testers, write a short **Best-case path** section in `beta-plan.md`:
+
+```markdown
+## Best-case path
+- Primary user: <who benefits most if this works>
+- Happy path: <3-7 steps from entry point to successful outcome>
+- Value delivered: <what becomes easier/safer/faster>
+- Success signal: <what evidence would show the happy path is real>
+```
+
+This is not marketing copy. It is the optimistic reference path that edge-case testers try to bend, break, or clarify.
 
 ---
 
@@ -171,6 +184,11 @@ Each activity must specify:
 - commands the tester may run, if any
 - required evidence: steps attempted, environment/context, expected vs actual, severity, reproducibility, recommendation
 
+Each activity must also specify one of these roles:
+- `happy_path_validation`: validates the best-case path from a realistic user context
+- `edge_case_probe`: searches for plausible persona-specific misuse, confusion, environment mismatch, docs gap, or integration friction
+- `developer_insight`: looks for ideas, overlooked risks, and surprisingly good design choices worth preserving
+
 Write:
 
 ```text
@@ -208,7 +226,9 @@ YOUR TASK:
 2. Record steps attempted.
 3. For each criterion, return PASS, FAIL, or UNCLEAR.
 4. For each FAIL/UNCLEAR, provide expected vs actual, evidence, reproducibility, severity, and recommendation.
-5. Do not speculate. If runtime verification is needed, mark UNCLEAR and state the exact missing runtime condition.
+5. Add an "Edge cases / ideas" section even if all criteria pass.
+6. Call out one "Good sign" if the change has a robust or valuable aspect worth preserving.
+7. Do not speculate. If runtime verification is needed, mark UNCLEAR and state the exact missing runtime condition.
 
 EVIDENCE REPORT FORMAT:
 ## Tester: <id>
@@ -226,6 +246,11 @@ For each FAIL/UNCLEAR:
 - Reproduction
 - Recommendation
 ### Overall score: <X>/<Y> criteria passing
+### Edge cases / ideas
+- Persona-specific edge case: <plausible risk, or "none found">
+- Missed risk: <risk the developer may not have considered, or "none found">
+- Good sign: <what worked well or should be preserved>
+- Idea sparked: <optional improvement idea, or "none">
 ```
 
 Run all tester subagents. Collect their evidence reports under:
@@ -239,8 +264,13 @@ Run all tester subagents. Collect their evidence reports under:
 ### Step 6 — Aggregate, triage, and escalate
 
 Using the aggregator model policy (`sonnet` by default), aggregate results:
+- best-case path status: validated / partially validated / not validated
 - per-tester score
 - total pass/fail/unclear
+- persona-specific edge cases
+- missed risks
+- good signs worth preserving
+- ideas sparked during the run
 - deduped findings
 - severity: P0/P1/P2/P3
 - classification: code defect, docs/UX gap, missing test, environment issue, known issue, false positive, deferred roadmap input
@@ -262,6 +292,8 @@ Write:
 ```
 
 If all exit criteria pass, write the session report and finish.
+
+The aggregate must produce value even when no blocker is found. A clean run still needs best-case validation, edge-case notes, good signs, and optional ideas.
 
 ---
 
@@ -315,6 +347,12 @@ Write a session report to `docs/beta-sessions/<YYYY-MM-DD>-<HH-MM>.md` containin
 
 ## Target diff
 
+## Best-case path
+- primary user
+- happy path
+- value delivered
+- status: validated / partially validated / not validated
+
 ## Beta plan
 - objective
 - beta type
@@ -330,6 +368,14 @@ Write a session report to `docs/beta-sessions/<YYYY-MM-DD>-<HH-MM>.md` containin
 ## Activities and rubric
 
 ## Results: initial run
+
+## Persona edge cases
+
+## Missed risks
+
+## Good signs
+
+## Ideas sparked
 
 ## Escalations
 

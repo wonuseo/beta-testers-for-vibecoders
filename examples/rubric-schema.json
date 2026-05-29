@@ -1,7 +1,13 @@
 {
   "$comment": "Schema for a rubric — acceptance criteria for one recruited beta tester and one activity against one diff.",
   "type": "object",
-  "required": ["testerId", "activityId", "diffRef", "criteria"],
+  "required": [
+    "testerId",
+    "activityId",
+    "role",
+    "diffRef",
+    "criteria"
+  ],
   "properties": {
     "testerId": {
       "$comment": "Matches id from persona-schema.json / recruited tester object.",
@@ -24,7 +30,12 @@
       "maxItems": 5,
       "items": {
         "type": "object",
-        "required": ["id", "statement", "rationale", "evidenceRequired"],
+        "required": [
+          "id",
+          "statement",
+          "rationale",
+          "evidenceRequired"
+        ],
         "properties": {
           "id": {
             "$comment": "Short slug for referencing in evidence and fix proposals.",
@@ -44,17 +55,38 @@
           "evidenceRequired": {
             "$comment": "What evidence must be produced to pass/fail this criterion.",
             "type": "array",
-            "items": { "type": "string" },
-            "example": ["README line quote", "steps attempted", "expected vs actual", "recommendation if blocked"]
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "README line quote",
+              "steps attempted",
+              "expected vs actual",
+              "recommendation if blocked"
+            ]
           },
           "relevantFiles": {
             "$comment": "Files most relevant to evaluating this criterion.",
             "type": "array",
-            "items": { "type": "string" },
-            "example": ["README.md", ".claude/commands/code-beta.md"]
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "README.md",
+              ".claude/commands/code-beta.md"
+            ]
           }
         }
       }
+    },
+    "role": {
+      "$comment": "Purpose of this activity within the beta run.",
+      "type": "string",
+      "enum": [
+        "happy_path_validation",
+        "edge_case_probe",
+        "developer_insight"
+      ]
     }
   },
   "example": {
@@ -66,16 +98,30 @@
         "id": "restart-warning-discoverable",
         "statement": "first-time-cli-user follows README quickstart → can tell a new Claude Code session is required before /code-beta appears",
         "rationale": "Command files copied mid-session are not registered until restart; this is a first-run blocker.",
-        "evidenceRequired": ["README quote", "recovery path", "expected vs actual"],
-        "relevantFiles": ["README.md"]
+        "evidenceRequired": [
+          "README quote",
+          "recovery path",
+          "expected vs actual"
+        ],
+        "relevantFiles": [
+          "README.md"
+        ]
       },
       {
         "id": "manual-fallback-usable",
         "statement": "first-time-cli-user hits Unknown command → can use a documented manual fallback without internal knowledge",
         "rationale": "The first self-dogfooding run hit this exact failure mode.",
-        "evidenceRequired": ["fallback prompt quote", "steps attempted", "blocking ambiguity if any"],
-        "relevantFiles": ["README.md", ".claude/commands/code-beta.md"]
+        "evidenceRequired": [
+          "fallback prompt quote",
+          "steps attempted",
+          "blocking ambiguity if any"
+        ],
+        "relevantFiles": [
+          "README.md",
+          ".claude/commands/code-beta.md"
+        ]
       }
-    ]
+    ],
+    "role": "happy_path_validation"
   }
 }

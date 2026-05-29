@@ -1,154 +1,237 @@
 # beta-testers-for-vibecoders
 
-A Claude Code-native harness that runs a synthetic beta program on your code changes before you ship — no external services, no CI pipeline, no test scripts required. Just a slash command.
+A Claude Code-native harness that turns a code diff into a useful synthetic beta run: best-case path, persona edge cases, missed risks, good signs, and concrete next fixes.
 
-## The problem
+No external service. No CI pipeline. No test script required. Just copy two Claude files into a repo and run `/code-beta`.
 
-Vibecoders ship fast. Real users are diverse. The gap between "it works on my machine" and "it works for my users" is where bugs live.
+## Why this exists
 
-Traditional tests catch what you predicted. Real beta programs catch what you did not: onboarding confusion, docs gaps, broken assumptions, integration friction, and user-specific edge cases.
+Vibecoders ship fast. The risky part is not only “does the code compile?” It is:
 
-## How it works
+- Does the intended happy path actually make sense?
+- What would a first-time user misunderstand?
+- What edge case would a maintainer, CI integrator, API consumer, or docs-only user hit?
+- What risk did the developer probably miss?
+- What is surprisingly good and should be preserved?
 
-`/code-beta` is a two-layer beta program manager:
+Traditional tests catch what you predicted. A beta run should also reveal what you did not know to ask.
 
-1. **Setup / recruitment**
-   - reads the diff with bounded context
-   - chooses what should be beta-tested
-   - selects beta type: focused, technical, closed, open-like breadth, docs/marketing, staged
-   - recruits quota-based synthetic beta testers
-   - assigns model policy: Opus planner/recruiter, Haiku/Sonnet testers, Sonnet triage
-   - writes `.harness/code-beta.config.json`
+## What `/code-beta` does
 
-2. **Run / evidence loop**
-   - gives each tester a concrete beta activity, not a vague review prompt
-   - constrains context to what that user would realistically know
-   - collects steps, expected vs actual, severity, reproducibility, and recommendations
-   - dedupes and triages findings
-   - escalates high-risk Haiku findings to Sonnet
-   - proposes or applies fixes and reruns failed testers
-
-The loop mirrors real beta operations:
+`/code-beta` runs a lightweight synthetic beta program on your current change.
 
 ```text
-plan beta → recruit testers → assign activities → collect evidence → triage → fix/accept/defer → rerun → exit decision
+plan beta
+→ define best-case path
+→ recruit synthetic testers
+→ assign happy-path and edge-case activities
+→ collect evidence and developer insight
+→ triage blockers
+→ propose fixes or ship decision
 ```
+
+The output is not just a bug list. A useful run can end with:
+
+1. **Best-case path** — the ideal user/developer journey this change should enable.
+2. **Persona edge cases** — where specific user types get confused, misuse the feature, or hit environment/docs gaps.
+3. **Developer insight** — missed risks, good signs, and ideas sparked during the run.
+4. **Ship/no-ship verdict** — what to fix now, what to accept, and what to revisit later.
 
 ## Quickstart
 
-**Copy the harness into your project:**
+Copy the harness into your project:
 
 ```bash
-# from this repo
 mkdir -p /your-project/.claude/commands /your-project/.claude/skills
 cp .claude/commands/code-beta.md        /your-project/.claude/commands/code-beta.md
 cp .claude/skills/code-beta-harness.md  /your-project/.claude/skills/code-beta-harness.md
 ```
 
-**Open a new Claude Code session, then run:**
+Open a new Claude Code session in the target project, then run:
 
 ```text
-/code-beta setup --diff HEAD~1..HEAD --testers 6
+/code-beta --diff HEAD~1..HEAD --testers 4
+```
+
+Or use the two-step flow:
+
+```text
+/code-beta setup --diff HEAD~1..HEAD --testers 4
 /code-beta run --diff HEAD~1..HEAD
 ```
 
-Or one-shot:
+Useful variants:
 
 ```text
-/code-beta --diff HEAD~1..HEAD --testers 6 --planner-model opus --tester-model haiku --escalation-model sonnet
-```
-
-Useful options:
-
-```text
-/code-beta setup --focus onboarding --testers 4 --mix cheap
+/code-beta setup --focus onboarding --testers 3 --mix cheap
 /code-beta setup --focus security --testers 6 --mix deep --tester-model sonnet
 /code-beta run --fix
-/code-beta --dry-run                 # setup artifacts only
+/code-beta --dry-run
 ```
 
-> **Important:** Claude Code only discovers command files at session start. If you copied the files into an already-open session, `/code-beta` won't be available until you start a new session.
+> Claude Code discovers slash commands only when a session starts. If `/code-beta` is unknown after copying the files, restart Claude Code or use the manual fallback below.
 
-## Troubleshooting
+## Manual fallback
 
-**`/code-beta` shows as unknown command**
-
-Claude Code registers slash commands from `.claude/commands/` only when a session starts. If you added the file mid-session, you have two options:
-
-**Option 1 — Restart the session** (recommended): Close and reopen Claude Code in your project directory. `/code-beta` will be available immediately.
-
-**Option 2 — Invoke manually without restarting**: Paste this into the Claude Code chat:
+If the command was copied into an already-open Claude Code session, paste this into Claude Code:
 
 ```text
 Read .claude/commands/code-beta.md and .claude/skills/code-beta-harness.md, then follow the workflow defined in code-beta.md on the diff HEAD~1..HEAD.
 ```
 
-The manual fallback works because the command file is plain instructions that Claude can read and follow directly, even without slash command registration. This repo's own first beta test was run this way.
+The command is plain markdown instructions, so Claude can follow it directly even before slash-command registration.
 
-## Example session
+## Example output
 
 ```text
-/code-beta setup --diff HEAD~1..HEAD --testers 6 --mix balanced
+/code-beta --diff HEAD~1..HEAD --testers 4
 
-Beta plan:
-  Objective: Validate first-time and integration users can adopt the changed auth flow safely.
-  Beta type: focused technical closed beta
-  Surfaces: README onboarding, LoginForm, session refresh API, CI docs
-  Exit criteria: no unresolved P0/P1, all high-risk findings confirmed by Sonnet
+Best-case path:
+  Primary user: first-time vibe coder adding the harness to a repo
+  Happy path:
+    1. Copy command + skill files
+    2. Restart Claude Code
+    3. Run /code-beta on the current diff
+    4. Read a concise ship/no-ship report
+  Value delivered: catches docs/onboarding gaps before the change ships
+  Status: partially validated
 
 Recruited testers:
-  • first-time-user-1       haiku   public-docs-only-first
-  • returning-user          haiku   app-flow context
-  • mobile-safari-user      haiku   UI docs + changed component
-  • api-consumer            haiku   API docs + changed endpoint
-  • ci-integrator           haiku   docs/config only
-  • security-reviewer       sonnet  auth/session internals allowed
+  • happy-path-first-timer     haiku   happy_path_validation   README only
+  • mid-session-user           haiku   edge_case_probe         README + command docs
+  • ci-integrator              haiku   edge_case_probe         docs/config only
+  • maintainer-reviewer        sonnet  developer_insight       diff + public docs
 
-/code-beta run --diff HEAD~1..HEAD
+Results:
+  ✓ happy-path-first-timer   3/3
+  ✗ mid-session-user         2/3   P1: unknown command recovery depends on restart note
+  ✓ ci-integrator            2/2
+  ✓ maintainer-reviewer      3/3
 
-Running beta activities...
-  ✓ first-time-user-1       3/3
-  ✗ returning-user          2/3   P1 session refresh race unclear
-  ✓ mobile-safari-user      3/3
-  ✗ api-consumer            1/3   P1 401 body missing error_code
-  ✓ ci-integrator           2/2
-  ✓ security-reviewer       4/4
+Persona edge cases:
+  - mid-session-user: copies files during an active Claude session and expects /code-beta to appear immediately.
+  - ci-integrator: may assume the report creates a hard CI gate even when the docs only promise a report.
 
-Escalation:
-  returning-user P1 finding escalated to Sonnet → confirmed UNCLEAR, needs runtime verification
+Missed risks:
+  - The quickstart needs to distinguish “install files” from “start a new Claude Code session.”
 
-Triage:
-  P1 fix now: api-consumer error_code response
-  P1 accepted known issue: session refresh requires runtime test
+Good signs:
+  - Manual fallback keeps the harness usable even when command discovery fails.
+  - Bounded-context tester instructions prevent omniscient code review from masquerading as user testing.
 
-Report → docs/beta-sessions/2026-05-29-14-32.md
+Ideas sparked:
+  - Add a tiny “first run checklist” to the final report.
+  - Consider a future `--ci-gate` mode only when exit-code support exists.
+
+Verdict:
+  Ship with docs fix.
+
+Next fixes:
+  1. Add restart warning near Quickstart.
+  2. Clarify CI examples are report-only unless a future gate mode is enabled.
+
+Report:
+  docs/beta-sessions/2026-05-29-14-32.md
 ```
 
-## Philosophy
+## Output sections
 
-- **Beta-program first** — plan, recruit, assign activities, collect evidence, triage, rerun
-- **No external services** — runs entirely inside Claude Code via subagents
-- **Realistic context** — testers start with what real users would know, not full repo omniscience
-- **Diff-scoped** — focuses on changed surfaces and explicit release risks
-- **Evidence-based** — every blocker needs steps, expected vs actual, severity, reproducibility, and recommendation
-- **Model-aware** — Opus for planning/recruiting, Haiku/Sonnet for testers, Sonnet for triage
+A final session report should include:
+
+```markdown
+## Best-case path
+## Ship/no-ship verdict
+## Top blockers
+## Persona edge cases
+## Missed risks
+## Good signs
+## Ideas sparked
+## Next fixes
+## Evidence appendix
+```
+
+The harness should produce value even when no blocker is found. Clean runs still report what worked, what edge cases were considered, and what the developer should preserve.
+
+## Core concepts
+
+### Best-case path
+
+The optimistic reference path for the change.
+
+It answers:
+
+- Who benefits most?
+- What should the smooth journey look like?
+- What value is delivered?
+- What evidence would prove this path is real?
+
+### Recruited testers
+
+Synthetic beta testers are selected from release risk, not generated as generic personas.
+
+Examples:
+
+- first-time user
+- returning maintainer
+- docs-only evaluator
+- CI integrator
+- API consumer
+- security reviewer
+- impatient power user
+
+### Activity roles
+
+Each tester gets one concrete activity with one role:
+
+| Role | Purpose |
+|---|---|
+| `happy_path_validation` | Validate the best-case path from a realistic user context. |
+| `edge_case_probe` | Find plausible confusion, misuse, docs gaps, integration friction, or environment mismatch. |
+| `developer_insight` | Surface good signs, missed risks, and ideas that help the developer think better about the change. |
+
+### Bounded context
+
+Testers do not start omniscient. They only see what their real-world segment would plausibly see.
+
+Examples:
+
+- README only
+- docs + examples only
+- changed files + one-hop callers
+- CI config only
+- public API docs only
+- internals allowed only for security/deep technical testers
+
+Hidden knowledge required for success is treated as a docs/UX gap, not a pass.
+
+### Evidence
+
+Every FAIL or UNCLEAR finding needs:
+
+- steps attempted
+- expected vs actual
+- evidence quote, file line, command output, or missing-context note
+- severity
+- reproducibility
+- recommendation
 
 ## Repository layout
 
 ```text
 .claude/
-  commands/code-beta.md          # /code-beta slash command (copy this to your project)
-  skills/code-beta-harness.md    # beta program methodology (copy this to your project)
-docs/
-  architecture.md                # system design and component map
-  mvp-plan.md                    # phased build roadmap
+  commands/code-beta.md          # /code-beta slash command
+  skills/code-beta-harness.md    # beta run methodology
 examples/
-  persona-schema.json            # tester/persona object definition
-  rubric-schema.json             # rubric + criterion definition
-  session-report-schema.json     # full run output schema
-  sample-run.md                  # annotated example session
+  persona-schema.json            # recruited tester schema
+  rubric-schema.json             # activity/rubric schema
+  session-report-schema.json     # full run data model
+docs/
+  architecture.md
+  mvp-plan.md
+  beta-sessions/
+  fix-proposals/
 ```
 
 ## Status
 
-Early scaffold. See `docs/mvp-plan.md` for what's built and what's next.
+Early scaffold. The primary artifact is the Claude Code command/skill pair. The current direction is **useful harness first**: copy good patterns from real user testing, then adapt them to code diffs, vibe-coding, and release preparation.

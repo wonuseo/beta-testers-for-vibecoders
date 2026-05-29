@@ -1,7 +1,16 @@
 {
   "$comment": "Schema for a recruited synthetic beta tester. Kept as persona-schema.json for backward compatibility with early docs.",
   "type": "object",
-  "required": ["id", "segment", "model", "contextPolicy", "allowedContext", "activityId", "successCondition"],
+  "required": [
+    "id",
+    "segment",
+    "model",
+    "contextPolicy",
+    "allowedContext",
+    "activityId",
+    "activityRole",
+    "successCondition"
+  ],
   "properties": {
     "id": {
       "$comment": "Hyphenated slug. Unique within a run. Used in report filenames and rubric tables.",
@@ -21,14 +30,23 @@
     "model": {
       "$comment": "Intended model policy for this tester. Runtime may not enforce per-subagent model selection.",
       "type": "string",
-      "enum": ["haiku", "sonnet"],
+      "enum": [
+        "haiku",
+        "sonnet"
+      ],
       "example": "haiku"
     },
     "screeningCriteria": {
       "$comment": "What qualifies this tester segment, mirroring real beta recruitment screening.",
       "type": "array",
-      "items": { "type": "string" },
-      "example": ["has not read internal design docs", "starts from README", "does not know slash-command registration caveat"]
+      "items": {
+        "type": "string"
+      },
+      "example": [
+        "has not read internal design docs",
+        "starts from README",
+        "does not know slash-command registration caveat"
+      ]
     },
     "contextPolicy": {
       "$comment": "How much context the tester may see initially.",
@@ -38,14 +56,24 @@
     "allowedContext": {
       "$comment": "Files or information this tester may use initially.",
       "type": "array",
-      "items": { "type": "string" },
-      "example": ["README.md", "examples/"]
+      "items": {
+        "type": "string"
+      },
+      "example": [
+        "README.md",
+        "examples/"
+      ]
     },
     "forbiddenInitialContext": {
       "$comment": "Context the tester should not inspect unless progressive disclosure is justified.",
       "type": "array",
-      "items": { "type": "string" },
-      "example": ["internal implementation files", "previous beta session reports"]
+      "items": {
+        "type": "string"
+      },
+      "example": [
+        "internal implementation files",
+        "previous beta session reports"
+      ]
     },
     "activityId": {
       "$comment": "Assigned beta activity.",
@@ -61,6 +89,16 @@
       "$comment": "Which beta-plan risk/surface led to this tester being recruited.",
       "type": "string",
       "example": "README quickstart and command discovery changed; first-time adoption is a release risk."
+    },
+    "activityRole": {
+      "$comment": "Role of assigned activity: validate happy path, probe edge cases, or surface developer insight.",
+      "type": "string",
+      "enum": [
+        "happy_path_validation",
+        "edge_case_probe",
+        "developer_insight"
+      ],
+      "example": "happy_path_validation"
     }
   },
   "example": {
@@ -74,10 +112,17 @@
       "does not know slash-command registration caveat"
     ],
     "contextPolicy": "public-docs-only-first",
-    "allowedContext": ["README.md", "examples/"],
-    "forbiddenInitialContext": [".claude/skills/code-beta-harness.md", "docs/beta-sessions/"],
+    "allowedContext": [
+      "README.md",
+      "examples/"
+    ],
+    "forbiddenInitialContext": [
+      ".claude/skills/code-beta-harness.md",
+      "docs/beta-sessions/"
+    ],
     "activityId": "install-and-run-command",
     "successCondition": "Can discover and run /code-beta or recover from Unknown command without hidden internal knowledge",
-    "recruitedBecause": "The harness is copied into projects and command discovery timing is a known first-run risk."
+    "recruitedBecause": "The harness is copied into projects and command discovery timing is a known first-run risk.",
+    "activityRole": "happy_path_validation"
   }
 }
