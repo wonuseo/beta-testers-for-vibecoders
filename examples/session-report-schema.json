@@ -1,7 +1,7 @@
 {
   "$comment": "Schema for a complete /code-beta session report. Written to docs/beta-sessions/YYYY-MM-DD-HH-MM.md as markdown; this JSON schema describes the underlying data model.",
   "type": "object",
-  "required": ["sessionId", "timestamp", "diffSummary", "personas", "rubrics", "initialResults", "finalResults", "gapClosure"],
+  "required": ["sessionId", "timestamp", "diffSummary", "betaPlan", "testerRecruitment", "activities", "rubrics", "initialResults", "finalResults", "gapClosure"],
   "properties": {
     "sessionId": {
       "$comment": "Filename-safe identifier, e.g. 2026-05-29-14-32.",
@@ -19,39 +19,66 @@
         "files": {
           "type": "array",
           "items": { "type": "string" },
-          "example": ["auth/session.ts", "ui/LoginForm.tsx", "api/session.ts"]
+          "example": ["README.md", ".claude/commands/code-beta.md", ".claude/skills/code-beta-harness.md"]
         },
         "changeType": {
-          "$comment": "feature | fix | refactor | config | mixed",
+          "$comment": "feature | fix | refactor | config | docs | harness | mixed",
           "type": "string",
-          "example": "fix"
+          "example": "harness"
         },
         "affectedAreas": {
           "type": "array",
           "items": { "type": "string" },
-          "example": ["authentication", "session management", "login UI"]
+          "example": ["beta setup", "tester recruitment", "evidence schema"]
         }
       }
     },
-    "codebaseContext": {
+    "betaPlan": {
+      "type": "object",
+      "required": ["objective", "betaType", "surfaces", "outOfScope", "exitCriteria"],
+      "properties": {
+        "objective": { "type": "string" },
+        "betaType": { "type": "string", "example": "focused-technical-closed" },
+        "surfaces": { "type": "array", "items": { "type": "string" } },
+        "outOfScope": { "type": "array", "items": { "type": "string" } },
+        "primaryRisks": { "type": "array", "items": { "type": "string" } },
+        "evidenceSchema": { "type": "array", "items": { "type": "string" } },
+        "exitCriteria": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "modelPolicy": {
       "type": "object",
       "properties": {
-        "appType": { "type": "string", "example": "Next.js SaaS web app" },
-        "stack": { "type": "string", "example": "TypeScript, Next.js 14, Prisma, PostgreSQL" },
-        "likelyUserTypes": {
-          "type": "array",
-          "items": { "type": "string" },
-          "example": ["end users", "API consumers", "admins"]
-        }
+        "plannerModel": { "type": "string", "example": "opus" },
+        "recruiterModel": { "type": "string", "example": "opus" },
+        "defaultTesterModel": { "type": "string", "example": "haiku" },
+        "escalationModel": { "type": "string", "example": "sonnet" },
+        "aggregatorModel": { "type": "string", "example": "sonnet" },
+        "runtimeEnforced": { "type": "boolean" }
       }
     },
-    "personas": {
-      "$comment": "Array of persona objects (see persona-schema.json).",
+    "testerRecruitment": {
+      "$comment": "Array of recruited tester objects (see persona-schema.json).",
       "type": "array",
       "items": { "$ref": "persona-schema.json" }
     },
+    "activities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["activityId", "testerId", "task", "allowedContext", "evidenceRequired"],
+        "properties": {
+          "activityId": { "type": "string" },
+          "testerId": { "type": "string" },
+          "task": { "type": "string" },
+          "allowedContext": { "type": "array", "items": { "type": "string" } },
+          "forbiddenContext": { "type": "array", "items": { "type": "string" } },
+          "evidenceRequired": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
     "rubrics": {
-      "$comment": "One rubric per persona (see rubric-schema.json).",
+      "$comment": "One rubric per tester/activity (see rubric-schema.json).",
       "type": "array",
       "items": { "$ref": "rubric-schema.json" }
     },
@@ -62,26 +89,38 @@
         "passing": { "type": "integer" },
         "failing": { "type": "integer" },
         "unclear": { "type": "integer" },
-        "perPersona": {
+        "perTester": {
           "type": "array",
           "items": {
             "type": "object",
             "properties": {
-              "personaId": { "type": "string" },
+              "testerId": { "type": "string" },
+              "activityId": { "type": "string" },
               "passing": { "type": "integer" },
               "total": { "type": "integer" },
-              "failingCriteria": {
-                "type": "array",
-                "items": { "type": "string" },
-                "$comment": "criterion IDs that failed"
-              }
+              "failingCriteria": { "type": "array", "items": { "type": "string" } },
+              "unclearCriteria": { "type": "array", "items": { "type": "string" } }
             }
           }
         },
         "evidenceReports": {
-          "$comment": "Full prose evidence output from each persona subagent, keyed by personaId.",
+          "$comment": "Full prose evidence output from each tester subagent, keyed by testerId.",
           "type": "object",
           "additionalProperties": { "type": "string" }
+        }
+      }
+    },
+    "triage": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "findingId": { "type": "string" },
+          "testerId": { "type": "string" },
+          "severity": { "type": "string", "enum": ["P0", "P1", "P2", "P3"] },
+          "classification": { "type": "string" },
+          "action": { "type": "string", "example": "fix before merge" },
+          "escalatedToSonnet": { "type": "boolean" }
         }
       }
     },
@@ -91,11 +130,7 @@
       "items": {
         "type": "object",
         "properties": {
-          "criteriaAddressed": {
-            "type": "array",
-            "items": { "type": "string" },
-            "$comment": "criterion IDs this fix addresses"
-          },
+          "criteriaAddressed": { "type": "array", "items": { "type": "string" } },
           "file": { "type": "string" },
           "description": { "type": "string" },
           "proposalFile": { "type": "string", "$comment": "path to fix-proposals markdown file" }
@@ -114,19 +149,12 @@
     "gapClosure": {
       "type": "object",
       "properties": {
-        "initialGap": { "type": "integer", "$comment": "number of failing criteria before fixes" },
-        "finalGap": { "type": "integer", "$comment": "number of failing criteria after fixes (or same as initial if not applied)" },
+        "initialGap": { "type": "integer", "$comment": "number of failing/unclear criteria before fixes" },
+        "finalGap": { "type": "integer", "$comment": "number of failing/unclear criteria after fixes or decisions" },
         "closed": { "type": "boolean" },
-        "confidence": {
-          "$comment": "high | medium | low — based on how much of the evaluation was static vs. UNCLEAR",
-          "type": "string",
-          "enum": ["high", "medium", "low"]
-        },
+        "confidence": { "type": "string", "enum": ["high", "medium", "low"] },
         "requiresHumanReview": { "type": "boolean" },
-        "humanReviewReasons": {
-          "type": "array",
-          "items": { "type": "string" }
-        }
+        "humanReviewReasons": { "type": "array", "items": { "type": "string" } }
       }
     }
   }

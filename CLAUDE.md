@@ -9,31 +9,35 @@ Two files that target repos install:
 | File | Role |
 |------|------|
 | `.claude/commands/code-beta.md` | The `/code-beta` slash command — orchestration logic |
-| `.claude/skills/code-beta-harness.md` | Persona + rubric methodology — referenced by the command |
+| `.claude/skills/code-beta-harness.md` | Synthetic beta program methodology — referenced by the command |
 
 Everything else in this repo (docs, examples, schemas) supports development of those two files.
 
 ## Core concepts
 
-**Persona** — a user archetype inferred from the codebase and diff (e.g. `new-user`, `api-consumer`, `mobile-user`). A persona has a name, description, entry point, and behavioral constraints. See `examples/persona-schema.json`.
+**Beta plan** — the setup-layer artifact that states objective, beta type, changed surfaces, out-of-scope areas, evidence schema, and exit criteria.
 
-**Rubric** — acceptance criteria generated for a (persona × diff) pair. Each criterion is a specific, falsifiable statement about what must be true from that persona's perspective. See `examples/rubric-schema.json`.
+**Tester recruitment** — quota-based selection of synthetic tester segments. Each tester has a model policy, screening criteria, prior-knowledge boundary, context policy, and assigned activity.
 
-**Persona subagent** — a Claude Code `Agent` subagent spawned with a persona-scoped prompt. It reads the relevant changed code, roleplays the persona, and produces structured evidence: what it attempted, what succeeded, what failed, and why.
+**Tester** — a recruited beta tester segment, not an omniscient code reviewer. A tester may be a first-time user, maintainer, CI integrator, API consumer, security reviewer, etc. See `examples/persona-schema.json` until it is renamed.
 
-**Evidence** — freeform structured text from a persona run. Includes: attempt log, success list, failure list, reproduction steps, and error excerpts. Not JSON — prose with clear section headers is more reliable from LLM agents.
+**Beta activity** — the concrete task assigned to a tester. Example: “Start from README and try to run `/code-beta` on HEAD~1..HEAD.” Activities replace vague “review this diff” prompts.
 
-**Gap** — the count of failing rubric criteria. Gap = 0 means all personas passed. Gap closure = reducing gap from N to 0.
+**Rubric** — acceptance criteria generated for a (tester × activity × diff) tuple. Each criterion is specific, falsifiable, and evaluated from that tester’s context policy. See `examples/rubric-schema.json`.
+
+**Evidence** — structured prose from a tester run. Includes: context used, steps attempted, expected vs actual, severity, reproducibility, and recommendation.
+
+**Gap** — unresolved FAIL/UNCLEAR criteria after triage. Gap closure = reducing unresolved blocker findings to zero or accepted known issues.
 
 **Fix proposal** — a concrete, file-level patch addressing one or more failing criteria. Grounded in evidence. Written to `docs/fix-proposals/` in the target repo.
 
-**Session report** — the full audit trail of a `/code-beta` run: diff summary, personas, rubric, per-persona evidence, scores, fixes, and gap closure. Written to `docs/beta-sessions/` in the target repo.
+**Session report** — the full audit trail of a `/code-beta` run: target diff, beta plan, tester recruitment, activities, evidence, triage, fixes, and gap closure. Written to `docs/beta-sessions/` in the target repo.
 
 ## Development conventions
 
 - The command file (`.claude/commands/code-beta.md`) is a workflow orchestrator. It should read like a recipe: steps, decisions, tool calls. Keep it action-oriented.
-- The skill file (`.claude/skills/code-beta-harness.md`) is a methodology reference. It defines *how* to do each step (persona inference algorithm, rubric generation rules, scoring criteria). The command file delegates to it.
-- Do not put methodology in the command file or orchestration in the skill file.
+- The skill file (`.claude/skills/code-beta-harness.md`) is a methodology reference. It defines *how* to design a beta plan, recruit testers, create activities, evaluate evidence, and triage gaps. The command file delegates to it.
+- Do not put detailed methodology in the command file or orchestration in the skill file.
 - Schemas in `examples/` use JSON with `$comment` fields. Keep them honest — if the command produces output, the schema should match.
 - All changes to the two distributable files should be tested by manually copying them into a sample project and running `/code-beta` there.
 
@@ -52,11 +56,11 @@ Everything else in this repo (docs, examples, schemas) supports development of t
 
 1. Make your change to `.claude/commands/code-beta.md` or `.claude/skills/code-beta-harness.md`.
 2. Use the **manual invocation fallback** (see README Troubleshooting) — paste the read+follow instruction into Claude Code chat with diff `HEAD~2..HEAD`. This avoids needing to restart your session.
-3. Compare: did persona inference produce 4 personas similar to the baseline? Were rubrics specific and falsifiable? Did scoring match the expected gaps?
+3. Compare: did setup produce a concrete beta objective/type? Did recruitment produce a quota-based tester pool with realistic context policies? Were activities concrete and evidence-based?
 4. Check the session report written to `docs/beta-sessions/` — compare gap closure to the baseline session.
-5. If results diverge significantly from baseline, your change may have regressed persona quality. Investigate before committing.
+5. If results diverge significantly from baseline, your change may have regressed beta-plan/recruitment quality. Investigate before committing.
 
-**Quality reference:** Use `examples/sample-run.md` as the template for what good output looks like (correct persona count, specific rubric criteria, code-cited evidence). Once a real session exists at `docs/beta-sessions/2026-05-29-*.md`, that becomes the reproducible baseline — compare persona names, rubric count, and gap result against it.
+**Quality reference:** Use `examples/sample-run.md` as the template for what good output looks like. Once a real session exists at `docs/beta-sessions/2026-05-29-*.md`, that becomes the reproducible baseline — compare tester count, activity specificity, evidence quality, and gap result against it.
 
 ## What's out of scope (for now)
 
@@ -64,4 +68,5 @@ Everything else in this repo (docs, examples, schemas) supports development of t
 - External service integrations (Sentry, Linear, Slack)
 - Runtime monitoring (this is a pre-push gate, not a live monitor)
 - Generating runnable test scripts (evidence-from-behavior is the model here)
+- Full repo omniscience (bounded, realistic context is intentional)
 - Language-specific plugins (harness is language-agnostic via code reading)

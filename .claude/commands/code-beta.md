@@ -1,25 +1,57 @@
-# /code-beta — Persona Beta Testing Harness
+# /code-beta — Synthetic Beta Program Harness
 
-Run persona-driven beta testing on a code diff from inside Claude Code. No external services. No test scripts. Evidence comes from subagents roleplaying real user archetypes against the changed code.
+Run a Claude Code-native beta program on a code diff. The harness now has two layers:
+
+1. **Setup / recruitment** — decide what should be beta-tested and recruit the right synthetic testers.
+2. **Run / evidence loop** — execute concrete beta activities, collect evidence, triage gaps, and rerun failures.
+
+No external services. The product surface is the Claude Code slash command plus this skill file.
 
 ## Usage
 
+```text
+/code-beta setup [options]        # design beta plan + tester recruitment brief
+/code-beta run [options]          # execute recruited testers from saved config
+/code-beta [options]              # one-shot: setup + run
 ```
-/code-beta [options]
 
 Options:
-  --diff <range>       Git range to test (default: staged changes)
-  --fix                Apply fix proposals and rerun failing personas
-  --personas custom    Load personas from .code-beta/personas.json instead of inferring
-  --scope <label>      Narrow persona inference to a named feature area
-  --dry-run            Show personas + rubric only, do not run subagents
+
+```text
+--diff <range>                 Git range to test (default: staged changes, then working tree)
+--testers <n>                  Number of synthetic beta testers to recruit (default: 6)
+--planner-model opus           Model policy for beta plan/recruitment (default: opus)
+--recruiter-model opus         Alias for planner-model during recruitment (default: opus)
+--tester-model haiku|sonnet    Default tester model (default: haiku)
+--escalation-model sonnet      Recheck high-risk/inconclusive findings (default: sonnet)
+--aggregator-model sonnet      Triage/dedupe/fix proposal model (default: sonnet)
+--mix cheap|balanced|deep      Tester depth/cost profile (default: balanced)
+--mode realistic|scoped|deep   Context policy (default: realistic)
+--max-files-per-tester <n>     Context budget per tester (default: 6)
+--focus <label>                Narrow setup to a named surface (onboarding, API, CI, security...)
+--fix                          Apply fix proposals and rerun failing testers
+--dry-run                      Write setup artifacts only; do not run testers
 ```
+
+## Model policy
+
+Use this default split unless the user overrides it:
+
+| Role | Model | Why |
+|---|---|---|
+| Beta planner | `opus` | chooses beta objective, beta type, surfaces, and exit criteria |
+| Tester recruiter | `opus` | designs quota, segments, context policy, and activities |
+| Breadth beta testers | `haiku` | cheap, fast, diverse first-pass findings |
+| High-risk / deep testers | `sonnet` | confirms security, API, CI, and ambiguous findings |
+| Aggregator / triage | `sonnet` | dedupes, classifies, and proposes minimal fixes |
+
+If Claude Code cannot actually switch subagent models in the current environment, still record the intended model policy in the artifacts and proceed with the available model.
 
 ## Workflow
 
 **Before executing any step:** Read `.claude/skills/code-beta-harness.md` in full. All references to "the methodology" below point to sections in that file. Reading it now avoids missing-skill errors if the file was added mid-session or the skill is not registered.
 
-```
+```text
 Read: .claude/skills/code-beta-harness.md
 ```
 
@@ -27,7 +59,7 @@ Follow these steps in order.
 
 ---
 
-### Step 1 — Resolve the diff
+### Step 1 — Resolve target diff
 
 ```bash
 # If --diff was provided, use that range:
@@ -45,146 +77,232 @@ git diff
 
 If the diff is empty, tell the user and stop.
 
-Summarize: how many files changed, which areas of the codebase (auth, UI, API, data, config…), what kind of change (new feature, bug fix, refactor, config).
+Summarize:
+- files changed
+- areas affected
+- change type: feature, bug fix, refactor, config, docs, harness change
+- likely user-visible or maintainer-visible surfaces
 
 ---
 
-### Step 2 — Understand the codebase context
+### Step 2 — Setup layer: beta plan
 
-Read enough of the repo to answer:
-- What kind of app is this? (web app, CLI, library, API, mobile…)
-- What tech stack? (language, framework, DB, deployment target)
-- Who are the likely end users? (developers, consumers, admins, bots…)
-- What is the changed surface? (what does the diff expose to users?)
+If command is `run` and `.harness/code-beta.config.json` exists, load it and skip to Step 4. Otherwise create a beta plan first.
 
-Read: `README.md`, `package.json`/`pyproject.toml`/`Cargo.toml` (whichever exists), any `CLAUDE.md`, and the changed files themselves.
+Read bounded context only:
+- `README.md`
+- `CLAUDE.md` / `AGENTS.md` if present
+- package/config files (`package.json`, `pyproject.toml`, `Cargo.toml`, etc.)
+- changed files and one-hop callers only if needed
+- existing tests only to infer test commands, not to overfit old behavior
 
-Do not read the entire codebase. 5–10 files is enough.
+Do **not** read the whole repo. Large-project behavior must be scoped.
 
----
+Using the methodology sections **Beta Program Setup** and **Beta Type Selection**, write:
 
-### Step 3 — Infer personas
-
-If `--personas custom` was given and `.code-beta/personas.json` exists, load personas from that file.
-
-Otherwise, infer 3–6 personas using the methodology in `code-beta-harness.md` (section: Persona Inference). Each persona must be:
-- Specific to this codebase (not generic archetypes)
-- Relevant to the changed surface
-- Distinct from each other (different entry points, goals, or constraints)
-
-Output persona list as a numbered summary before proceeding.
-
----
-
-### Step 4 — Generate rubrics
-
-For each persona, generate 2–5 acceptance criteria using the methodology in `code-beta-harness.md` (section: Rubric Generation).
-
-Each criterion must be:
-- Specific to this diff (not general quality statements)
-- Falsifiable from the persona's perspective
-- Actionable to test by reading code + reasoning about behavior
-
-Print the rubric table before running subagents.
-
-If `--dry-run` was given, stop here.
-
----
-
-### Step 5 — Run persona subagents
-
-Spawn one Claude Code subagent per persona using the `Agent` tool. Each subagent receives:
-
+```text
+.harness/runs/<run_id>/beta-plan.md
+.harness/runs/<run_id>/scope-map.json
+.harness/runs/<run_id>/risk-map.json
 ```
-You are testing a code change as a specific user persona.
 
-PERSONA: <name>
-<persona description>
+The beta plan must include:
+- beta objective / hypothesis
+- beta type: closed, focused, technical, open-like breadth, marketing/docs, post-release/staged, or hybrid
+- surfaces to test
+- explicit out-of-scope areas
+- core beta activities
+- evidence schema
+- exit criteria
 
-CODEBASE CONTEXT:
-<2-3 sentence summary from Step 2>
+---
 
-CHANGED FILES:
-<list of changed files with brief description of change>
+### Step 3 — Setup layer: tester recruitment
 
-RUBRIC (your criteria to evaluate):
-<numbered criteria list for this persona>
+Using Opus-level planning/recruitment logic, recruit a quota-based tester pool from the beta plan. Do not generate generic personas.
+
+Respect options:
+- `--testers <n>` controls total quota
+- `--mix` controls distribution:
+  - `cheap`: mostly Haiku breadth testers, shallow activities
+  - `balanced`: Haiku breadth + Sonnet escalation/deep tester
+  - `deep`: more Sonnet high-risk testers, stricter evidence
+- `--mode` controls context access:
+  - `realistic`: each tester sees only what their real user segment would plausibly see first
+  - `scoped`: changed surface + selected docs/config
+  - `deep`: maintainers/security may inspect internals, but normal users still start with public context
+
+Each recruited tester must have:
+- id / segment / beta type fit
+- quota rationale
+- intended model (`haiku` or `sonnet`)
+- context policy
+- allowed context list
+- screening criteria / prior knowledge boundary
+- activity assignment
+- success condition
+
+Write:
+
+```text
+.harness/runs/<run_id>/tester-recruitment.md
+.harness/runs/<run_id>/personas.json
+.harness/code-beta.config.json
+```
+
+If `--dry-run` was provided, stop after printing the beta plan and recruitment table.
+
+---
+
+### Step 4 — Generate beta activities and rubrics
+
+For each tester, generate one concrete beta activity and 2–5 falsifiable criteria using methodology sections **Beta Activity Design** and **Rubric Generation**.
+
+A beta activity is not a vague review. It is a task like:
+
+```text
+Start from README only. Try to discover and run /code-beta on HEAD~1..HEAD. Record the exact step where you get blocked.
+```
+
+Each activity must specify:
+- task / starting point
+- allowed context
+- forbidden context unless progressively requested
+- commands the tester may run, if any
+- required evidence: steps attempted, environment/context, expected vs actual, severity, reproducibility, recommendation
+
+Write:
+
+```text
+.harness/runs/<run_id>/test-activities.json
+.harness/runs/<run_id>/rubric.json
+```
+
+Print the tester/activity/rubric table before running testers.
+
+---
+
+### Step 5 — Run recruited beta testers
+
+Spawn one Claude Code subagent per tester/activity row using the `Agent` tool when available.
+
+Each subagent receives:
+
+```text
+You are a recruited beta tester, not an omniscient code reviewer.
+
+TESTER:
+<id, segment, model policy, prior knowledge boundary>
+
+BETA ACTIVITY:
+<task, starting point, allowed context, forbidden context, commands>
+
+CONTEXT POLICY:
+Start only with the allowed context. If blocked, request the smallest additional file/context needed and explain why. Hidden internal knowledge required for success is a docs/UX gap, not a pass.
+
+RUBRIC:
+<criteria>
 
 YOUR TASK:
-1. Read the changed files relevant to your persona's experience.
-2. Reason through each rubric criterion: would it pass or fail based on the code?
-3. For each FAIL: describe exactly what breaks, quote the relevant code, write reproduction steps.
-4. For each PASS: one sentence explaining why it passes.
-5. Output a structured evidence report (see format below).
+1. Attempt the beta activity under the context policy.
+2. Record steps attempted.
+3. For each criterion, return PASS, FAIL, or UNCLEAR.
+4. For each FAIL/UNCLEAR, provide expected vs actual, evidence, reproducibility, severity, and recommendation.
+5. Do not speculate. If runtime verification is needed, mark UNCLEAR and state the exact missing runtime condition.
 
 EVIDENCE REPORT FORMAT:
-## Persona: <name>
-### Attempt summary
-<what you tried to do as this persona>
-
+## Tester: <id>
+### Segment / beta type
+### Activity attempted
+### Context used
+### Steps attempted
 ### Results
-| Criterion | Result | Evidence |
-|-----------|--------|----------|
-| <criterion text> | PASS/FAIL | <one-line evidence> |
-
-### Failures (detail)
-For each FAIL:
-**Criterion:** <text>
-**What breaks:** <description>
-**Relevant code:** <file:line — quote>
-**Reproduction:** <step-by-step>
-
+| Criterion | Result | Evidence | Severity |
+### Failures / unclear findings
+For each FAIL/UNCLEAR:
+- Expected
+- Actual
+- Evidence: file:line, command output, docs quote, or explicit missing-context note
+- Reproduction
+- Recommendation
 ### Overall score: <X>/<Y> criteria passing
 ```
 
-Run all persona subagents. Collect their evidence reports.
+Run all tester subagents. Collect their evidence reports under:
+
+```text
+.harness/runs/<run_id>/testers/<tester-id>.md
+```
 
 ---
 
-### Step 6 — Score and triage
+### Step 6 — Aggregate, triage, and escalate
 
-Aggregate results:
-- Per-persona: X/Y criteria passing
-- Overall: total passing / total criteria
-- List all failing criteria with their persona
+Using the aggregator model policy (`sonnet` by default), aggregate results:
+- per-tester score
+- total pass/fail/unclear
+- deduped findings
+- severity: P0/P1/P2/P3
+- classification: code defect, docs/UX gap, missing test, environment issue, known issue, false positive, deferred roadmap input
+- current-release action: fix now, accept known issue, defer, re-run with more context, escalate to Sonnet
 
-Print the score summary table.
+High-risk Haiku findings must be escalated to Sonnet before final blocker status:
+- security/privacy
+- data loss/corruption
+- auth/permission
+- CI/release gating
+- public API breakage
+- findings with weak or ambiguous evidence
 
-If all criteria pass, print a success message and write the session report (Step 8). Done.
+Write:
+
+```text
+.harness/runs/<run_id>/aggregate.md
+.harness/runs/<run_id>/aggregate.json
+```
+
+If all exit criteria pass, write the session report and finish.
 
 ---
 
-### Step 7 — Fix proposals (if gap > 0)
+### Step 7 — Fix proposals or decision log
 
-For each failing criterion, propose a fix using the methodology in `code-beta-harness.md` (section: Fix Proposals).
+For each unresolved blocker, propose a minimal fix using methodology section **Fix Proposals**.
 
 A fix proposal must:
-- Reference the specific failing criterion and persona
-- Identify the exact file and line range to change
-- Describe the change in plain English
-- Include a code snippet showing the proposed change
-- Be minimal (only fix what is failing, nothing else)
+- reference tester, activity, criterion, and severity
+- quote the evidence
+- identify exact file/line range to change
+- describe minimal change
+- include before/after diff snippet where possible
+- state whether it fixes code, docs, test, or harness ambiguity
 
-Group fixes by file. If two failing criteria require changes to the same file, combine them into one proposal.
+Write:
 
-Write proposals to `docs/fix-proposals/<YYYY-MM-DD>-<slug>.md` in the repo being tested.
+```text
+docs/fix-proposals/<YYYY-MM-DD>-<slug>.md
+.harness/runs/<run_id>/decision-log.md
+```
 
-Print a summary of proposed fixes.
-
-If `--fix` was NOT given, ask the user: "Apply fixes? (y/n)". Stop if they say no; write partial session report noting fixes were proposed but not applied.
+If `--fix` was NOT given, ask the user whether to apply fixes. Stop if they say no; write partial session report noting fixes proposed but not applied.
 
 ---
 
-### Step 8 — Apply fixes and rerun (if --fix or user said yes)
+### Step 8 — Apply fixes and rerun failed testers
 
-Apply each fix proposal by editing the relevant files.
+If `--fix` was given or user approved:
+- Apply minimal fixes.
+- Rerun only failed/unclear testers first.
+- Compare before/after evidence for the same activity and rubric.
+- If critical gaps close, optionally rerun the full tester pool once.
 
-After applying all fixes, rerun the subagents only for the personas that had failures (Step 5 format, same rubric).
+Do not loop more than once automatically. Surface remaining failures for human review.
 
-Collect new evidence. Recompute scores.
+Write:
 
-If gap is now 0: report success with gap closure.
-If gap > 0 after one rerun: report remaining failures and stop. Do not loop more than once automatically — surface remaining failures for human review.
+```text
+.harness/runs/<run_id>/gap-closure.md
+```
 
 ---
 
@@ -195,29 +313,35 @@ Write a session report to `docs/beta-sessions/<YYYY-MM-DD>-<HH-MM>.md` containin
 ```markdown
 # Beta Session: <date> <time>
 
-## Diff summary
-<files changed, areas affected, change type>
+## Target diff
 
-## Personas tested
-<numbered list with descriptions>
+## Beta plan
+- objective
+- beta type
+- surfaces
+- out of scope
+- exit criteria
 
-## Rubric
-<full criteria table>
+## Tester recruitment
+- tester count
+- model policy
+- segment quota table
 
-## Results (initial run)
-<score table>
+## Activities and rubric
+
+## Results: initial run
+
+## Escalations
+
+## Triage / decisions
 
 ## Fix proposals
-<link to fix-proposals file, or "none">
 
-## Results (after fixes)
-<score table, or "fixes not applied">
+## Results: after fixes
 
 ## Gap closure
-<before: N/M → after: N/M, or "not closed">
 
-## Evidence
-<per-persona evidence reports>
+## Evidence appendix
 ```
 
-Print: "Session report written to docs/beta-sessions/<filename>"
+Print: `Session report written to docs/beta-sessions/<filename>`.

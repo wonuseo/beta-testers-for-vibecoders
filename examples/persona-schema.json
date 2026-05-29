@@ -1,60 +1,83 @@
 {
-  "$comment": "Schema for a single persona object. Used in .code-beta/personas.json (array of these) or generated at runtime.",
+  "$comment": "Schema for a recruited synthetic beta tester. Kept as persona-schema.json for backward compatibility with early docs.",
   "type": "object",
-  "required": ["id", "name", "description", "entryPoint", "goal", "constraints"],
+  "required": ["id", "segment", "model", "contextPolicy", "allowedContext", "activityId", "successCondition"],
   "properties": {
     "id": {
       "$comment": "Hyphenated slug. Unique within a run. Used in report filenames and rubric tables.",
       "type": "string",
-      "example": "returning-mobile-user"
+      "example": "first-time-cli-user"
     },
-    "name": {
-      "$comment": "Human-readable display name.",
+    "segment": {
+      "$comment": "The recruited beta tester segment.",
       "type": "string",
-      "example": "Returning Mobile User"
+      "example": "First-time user installing and invoking the changed Claude Code command"
     },
-    "description": {
-      "$comment": "2-3 sentences: who this person is, what they want, what state they're in.",
+    "quotaGroup": {
+      "$comment": "Which recruitment quota or risk surface this tester satisfies.",
       "type": "string",
-      "example": "A user who signed up two weeks ago and is returning to the app after their session token expired. They're on an iPhone using Safari. They want to resume where they left off without having to remember their password."
+      "example": "onboarding"
     },
-    "entryPoint": {
-      "$comment": "The specific code surface or UI flow where this persona enters the changed feature.",
+    "model": {
+      "$comment": "Intended model policy for this tester. Runtime may not enforce per-subagent model selection.",
       "type": "string",
-      "example": "POST /api/auth/refresh — called automatically by the client when a 401 is received"
+      "enum": ["haiku", "sonnet"],
+      "example": "haiku"
     },
-    "goal": {
-      "$comment": "One sentence: what outcome the persona is trying to achieve.",
-      "type": "string",
-      "example": "Resume their session transparently without being redirected to the login page"
-    },
-    "constraints": {
-      "$comment": "Array of constraints that distinguish this persona from others: device, permission level, data state, etc.",
+    "screeningCriteria": {
+      "$comment": "What qualifies this tester segment, mirroring real beta recruitment screening.",
       "type": "array",
       "items": { "type": "string" },
-      "example": [
-        "iOS Safari — virtual keyboard overlaps lower UI elements",
-        "Expired access token but valid refresh token in httpOnly cookie",
-        "No password manager installed"
-      ]
+      "example": ["has not read internal design docs", "starts from README", "does not know slash-command registration caveat"]
     },
-    "inferredFrom": {
-      "$comment": "Explains which codebase signals led to this persona being inferred. Omit in hand-authored .code-beta/personas.json.",
+    "contextPolicy": {
+      "$comment": "How much context the tester may see initially.",
       "type": "string",
-      "example": "session.ts line 47 checks refresh token validity; middleware/auth.ts has iOS Safari UA detection"
+      "example": "public-docs-only-first"
+    },
+    "allowedContext": {
+      "$comment": "Files or information this tester may use initially.",
+      "type": "array",
+      "items": { "type": "string" },
+      "example": ["README.md", "examples/"]
+    },
+    "forbiddenInitialContext": {
+      "$comment": "Context the tester should not inspect unless progressive disclosure is justified.",
+      "type": "array",
+      "items": { "type": "string" },
+      "example": ["internal implementation files", "previous beta session reports"]
+    },
+    "activityId": {
+      "$comment": "Assigned beta activity.",
+      "type": "string",
+      "example": "install-and-run-command"
+    },
+    "successCondition": {
+      "$comment": "Observable success condition for this tester.",
+      "type": "string",
+      "example": "Can complete the target flow without hidden internal knowledge"
+    },
+    "recruitedBecause": {
+      "$comment": "Which beta-plan risk/surface led to this tester being recruited.",
+      "type": "string",
+      "example": "README quickstart and command discovery changed; first-time adoption is a release risk."
     }
   },
   "example": {
-    "id": "returning-mobile-user",
-    "name": "Returning Mobile User",
-    "description": "A user who signed up two weeks ago and is returning after their session expired. On iPhone Safari. Wants to resume without re-entering their password.",
-    "entryPoint": "POST /api/auth/refresh — triggered automatically by the SWR client on 401",
-    "goal": "Resume session transparently without hitting the login page",
-    "constraints": [
-      "iOS Safari — virtual keyboard overlaps lower UI elements",
-      "Has a valid refresh token in httpOnly cookie",
-      "Access token expired 2 hours ago"
+    "id": "first-time-cli-user",
+    "segment": "First-time user installing and invoking the changed Claude Code command",
+    "quotaGroup": "onboarding",
+    "model": "haiku",
+    "screeningCriteria": [
+      "has not read internal design docs",
+      "starts from README",
+      "does not know slash-command registration caveat"
     ],
-    "inferredFrom": "session.ts:47 refresh logic, middleware/auth.ts iOS Safari UA check"
+    "contextPolicy": "public-docs-only-first",
+    "allowedContext": ["README.md", "examples/"],
+    "forbiddenInitialContext": [".claude/skills/code-beta-harness.md", "docs/beta-sessions/"],
+    "activityId": "install-and-run-command",
+    "successCondition": "Can discover and run /code-beta or recover from Unknown command without hidden internal knowledge",
+    "recruitedBecause": "The harness is copied into projects and command discovery timing is a known first-run risk."
   }
 }

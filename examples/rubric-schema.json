@@ -1,12 +1,17 @@
 {
-  "$comment": "Schema for a rubric — the set of acceptance criteria for one persona against one diff.",
+  "$comment": "Schema for a rubric — acceptance criteria for one recruited beta tester and one activity against one diff.",
   "type": "object",
-  "required": ["personaId", "diffRef", "criteria"],
+  "required": ["testerId", "activityId", "diffRef", "criteria"],
   "properties": {
-    "personaId": {
-      "$comment": "Matches persona.id from persona-schema.json.",
+    "testerId": {
+      "$comment": "Matches id from persona-schema.json / recruited tester object.",
       "type": "string",
-      "example": "returning-mobile-user"
+      "example": "first-time-cli-user"
+    },
+    "activityId": {
+      "$comment": "The beta activity this rubric evaluates.",
+      "type": "string",
+      "example": "install-and-run-command"
     },
     "diffRef": {
       "$comment": "Git range or commit SHA this rubric was generated for.",
@@ -19,54 +24,57 @@
       "maxItems": 5,
       "items": {
         "type": "object",
-        "required": ["id", "statement", "rationale"],
+        "required": ["id", "statement", "rationale", "evidenceRequired"],
         "properties": {
           "id": {
             "$comment": "Short slug for referencing in evidence and fix proposals.",
             "type": "string",
-            "example": "refresh-transparent"
+            "example": "restart-warning-discoverable"
           },
           "statement": {
-            "$comment": "The criterion itself. Format: [persona] [action] → [observable outcome]. Must be falsifiable from static code reading.",
+            "$comment": "Format: [tester] [activity/action] → [observable outcome]. Must be falsifiable under the tester context policy.",
             "type": "string",
-            "example": "returning-mobile-user's expired token → refresh happens transparently; user is not redirected to /login"
+            "example": "first-time-cli-user follows README quickstart → can tell a new Claude Code session is required before /code-beta appears"
           },
           "rationale": {
-            "$comment": "One sentence: why this criterion matters for this persona and this diff.",
+            "$comment": "One sentence: why this criterion matters for this tester and diff.",
             "type": "string",
-            "example": "The diff changes session.ts refresh logic; a regression here silently logs out returning users."
+            "example": "The harness is installed by copying command files; Claude Code only discovers them at session start."
           },
-          "changedFiles": {
-            "$comment": "Which changed files are most relevant to evaluating this criterion.",
+          "evidenceRequired": {
+            "$comment": "What evidence must be produced to pass/fail this criterion.",
             "type": "array",
             "items": { "type": "string" },
-            "example": ["session.ts", "api/session.ts"]
+            "example": ["README line quote", "steps attempted", "expected vs actual", "recommendation if blocked"]
+          },
+          "relevantFiles": {
+            "$comment": "Files most relevant to evaluating this criterion.",
+            "type": "array",
+            "items": { "type": "string" },
+            "example": ["README.md", ".claude/commands/code-beta.md"]
           }
         }
       }
     }
   },
   "example": {
-    "personaId": "returning-mobile-user",
+    "testerId": "first-time-cli-user",
+    "activityId": "install-and-run-command",
     "diffRef": "HEAD~1..HEAD",
     "criteria": [
       {
-        "id": "refresh-transparent",
-        "statement": "returning-mobile-user's expired token → refresh call succeeds silently; no /login redirect",
-        "rationale": "Core session.ts change; a regression here logs out returning users without warning.",
-        "changedFiles": ["session.ts", "api/session.ts"]
+        "id": "restart-warning-discoverable",
+        "statement": "first-time-cli-user follows README quickstart → can tell a new Claude Code session is required before /code-beta appears",
+        "rationale": "Command files copied mid-session are not registered until restart; this is a first-run blocker.",
+        "evidenceRequired": ["README quote", "recovery path", "expected vs actual"],
+        "relevantFiles": ["README.md"]
       },
       {
-        "id": "refresh-race-safe",
-        "statement": "concurrent refresh calls → only one refresh executes; subsequent calls wait and reuse the result",
-        "rationale": "Diff adds a mutex; without it, parallel requests trigger multiple refresh attempts and may revoke each other.",
-        "changedFiles": ["session.ts"]
-      },
-      {
-        "id": "error-fallback",
-        "statement": "refresh token expired → user is redirected to /login with a clear message, not a silent blank page",
-        "rationale": "Ensures graceful degradation when refresh is impossible.",
-        "changedFiles": ["session.ts", "ui/SessionGuard.tsx"]
+        "id": "manual-fallback-usable",
+        "statement": "first-time-cli-user hits Unknown command → can use a documented manual fallback without internal knowledge",
+        "rationale": "The first self-dogfooding run hit this exact failure mode.",
+        "evidenceRequired": ["fallback prompt quote", "steps attempted", "blocking ambiguity if any"],
+        "relevantFiles": ["README.md", ".claude/commands/code-beta.md"]
       }
     ]
   }

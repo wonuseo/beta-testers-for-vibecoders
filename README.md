@@ -1,25 +1,38 @@
 # beta-testers-for-vibecoders
 
-A Claude Code-native harness that beta-tests your code changes before you ship — no external services, no CI pipeline, no test scripts. Just a slash command.
+A Claude Code-native harness that runs a synthetic beta program on your code changes before you ship — no external services, no CI pipeline, no test scripts required. Just a slash command.
 
 ## The problem
 
 Vibecoders ship fast. Real users are diverse. The gap between "it works on my machine" and "it works for my users" is where bugs live.
 
-Traditional testing catches what you predicted. This catches what you didn't.
+Traditional tests catch what you predicted. Real beta programs catch what you did not: onboarding confusion, docs gaps, broken assumptions, integration friction, and user-specific edge cases.
 
 ## How it works
 
-Run `/code-beta` on any diff. The harness:
+`/code-beta` is a two-layer beta program manager:
 
-1. **Reads your diff** — understands what changed and in what codebase context
-2. **Infers personas** — who actually uses this feature (new users, power users, mobile users, API consumers…)
-3. **Generates rubrics** — specific acceptance criteria per persona for the changed surface
-4. **Spawns subagents** — each one roleplays a persona and attempts to use the changed feature
-5. **Collects evidence** — what worked, what broke, friction, errors, reproduction steps
-6. **Scores results** — pass/fail per rubric criterion per persona
-7. **Proposes or applies fixes** — `--fix` auto-patches failures and reruns
-8. **Reports gap closure** — before/after breakdown with full audit trail
+1. **Setup / recruitment**
+   - reads the diff with bounded context
+   - chooses what should be beta-tested
+   - selects beta type: focused, technical, closed, open-like breadth, docs/marketing, staged
+   - recruits quota-based synthetic beta testers
+   - assigns model policy: Opus planner/recruiter, Haiku/Sonnet testers, Sonnet triage
+   - writes `.harness/code-beta.config.json`
+
+2. **Run / evidence loop**
+   - gives each tester a concrete beta activity, not a vague review prompt
+   - constrains context to what that user would realistically know
+   - collects steps, expected vs actual, severity, reproducibility, and recommendations
+   - dedupes and triages findings
+   - escalates high-risk Haiku findings to Sonnet
+   - proposes or applies fixes and reruns failed testers
+
+The loop mirrors real beta operations:
+
+```text
+plan beta → recruit testers → assign activities → collect evidence → triage → fix/accept/defer → rerun → exit decision
+```
 
 ## Quickstart
 
@@ -27,18 +40,31 @@ Run `/code-beta` on any diff. The harness:
 
 ```bash
 # from this repo
-cp .claude/commands/code-beta.md   /your-project/.claude/commands/code-beta.md
+mkdir -p /your-project/.claude/commands /your-project/.claude/skills
+cp .claude/commands/code-beta.md        /your-project/.claude/commands/code-beta.md
 cp .claude/skills/code-beta-harness.md  /your-project/.claude/skills/code-beta-harness.md
 ```
 
 **Open a new Claude Code session, then run:**
 
+```text
+/code-beta setup --diff HEAD~1..HEAD --testers 6
+/code-beta run --diff HEAD~1..HEAD
 ```
-/code-beta                         # test current staged diff
-/code-beta --diff HEAD~1..HEAD     # test last commit
-/code-beta --fix                   # test + auto-patch failures
-/code-beta --personas custom       # use .code-beta/personas.json instead of inferring
-/code-beta --scope auth            # narrow to a named feature area
+
+Or one-shot:
+
+```text
+/code-beta --diff HEAD~1..HEAD --testers 6 --planner-model opus --tester-model haiku --escalation-model sonnet
+```
+
+Useful options:
+
+```text
+/code-beta setup --focus onboarding --testers 4 --mix cheap
+/code-beta setup --focus security --testers 6 --mix deep --tester-model sonnet
+/code-beta run --fix
+/code-beta --dry-run                 # setup artifacts only
 ```
 
 > **Important:** Claude Code only discovers command files at session start. If you copied the files into an already-open session, `/code-beta` won't be available until you start a new session.
@@ -53,7 +79,7 @@ Claude Code registers slash commands from `.claude/commands/` only when a sessio
 
 **Option 2 — Invoke manually without restarting**: Paste this into the Claude Code chat:
 
-```
+```text
 Read .claude/commands/code-beta.md and .claude/skills/code-beta-harness.md, then follow the workflow defined in code-beta.md on the diff HEAD~1..HEAD.
 ```
 
@@ -61,62 +87,63 @@ The manual fallback works because the command file is plain instructions that Cl
 
 ## Example session
 
-```
-/code-beta --diff HEAD~1..HEAD
+```text
+/code-beta setup --diff HEAD~1..HEAD --testers 6 --mix balanced
 
-Diff: 3 files changed (auth/login.ts, ui/LoginForm.tsx, api/session.ts)
-Codebase: Next.js SaaS app, email+password auth, REST API, mobile-responsive
+Beta plan:
+  Objective: Validate first-time and integration users can adopt the changed auth flow safely.
+  Beta type: focused technical closed beta
+  Surfaces: README onboarding, LoginForm, session refresh API, CI docs
+  Exit criteria: no unresolved P0/P1, all high-risk findings confirmed by Sonnet
 
-Inferred personas (4):
-  • new-user          First login, no account yet, on desktop
-  • returning-user    Has saved session, coming back after token expiry
-  • mobile-user       Completing signup flow on iPhone Safari
-  • api-consumer      Integrating auth via REST, no UI
+Recruited testers:
+  • first-time-user-1       haiku   public-docs-only-first
+  • returning-user          haiku   app-flow context
+  • mobile-safari-user      haiku   UI docs + changed component
+  • api-consumer            haiku   API docs + changed endpoint
+  • ci-integrator           haiku   docs/config only
+  • security-reviewer       sonnet  auth/session internals allowed
 
-Generated rubric: 12 criteria across 4 personas
+/code-beta run --diff HEAD~1..HEAD
 
-Running persona subagents...
-  ✓ new-user          8/8   all criteria passed
-  ✗ returning-user    5/8   3 failing  (session refresh race condition)
-  ✓ mobile-user       6/6   all criteria passed
-  ✗ api-consumer      2/4   2 failing  (401 body missing error_code field)
+Running beta activities...
+  ✓ first-time-user-1       3/3
+  ✗ returning-user          2/3   P1 session refresh race unclear
+  ✓ mobile-safari-user      3/3
+  ✗ api-consumer            1/3   P1 401 body missing error_code
+  ✓ ci-integrator           2/2
+  ✓ security-reviewer       4/4
 
-Gap: 5 / 12 criteria failing
+Escalation:
+  returning-user P1 finding escalated to Sonnet → confirmed UNCLEAR, needs runtime verification
 
-Fix proposals:
-  [1] session.ts:47 — refresh lock prevents double-trigger (returning-user)
-  [2] api/session.ts:112 — add error_code to 401 response body (api-consumer)
+Triage:
+  P1 fix now: api-consumer error_code response
+  P1 accepted known issue: session refresh requires runtime test
 
-Apply fixes? (y/n): y
-Fixes applied → docs/fix-proposals/2026-05-29-auth-refresh.md
-
-Rerunning failed personas...
-  ✓ returning-user    8/8   all criteria passed
-  ✓ api-consumer      4/4   all criteria passed
-
-Final: 12/12 passing. Gap closed.
 Report → docs/beta-sessions/2026-05-29-14-32.md
 ```
 
 ## Philosophy
 
-- **No external services** — runs entirely inside Claude Code via Agent subagents
-- **No test scripts** — evidence comes from agent behavior and code reading, not assertions
-- **Persona-driven** — tests what matters to real user archetypes, not just code coverage
-- **Diff-scoped** — only exercises the changed surface, not the entire app
-- **Fix-aware** — patches are grounded in specific failure evidence, not guesses
+- **Beta-program first** — plan, recruit, assign activities, collect evidence, triage, rerun
+- **No external services** — runs entirely inside Claude Code via subagents
+- **Realistic context** — testers start with what real users would know, not full repo omniscience
+- **Diff-scoped** — focuses on changed surfaces and explicit release risks
+- **Evidence-based** — every blocker needs steps, expected vs actual, severity, reproducibility, and recommendation
+- **Model-aware** — Opus for planning/recruiting, Haiku/Sonnet for testers, Sonnet for triage
 
 ## Repository layout
 
-```
+```text
 .claude/
   commands/code-beta.md          # /code-beta slash command (copy this to your project)
-  skills/code-beta-harness.md    # persona methodology (copy this to your project)
+  skills/code-beta-harness.md    # beta program methodology (copy this to your project)
 docs/
   architecture.md                # system design and component map
   mvp-plan.md                    # phased build roadmap
 examples/
-  persona-schema.json            # persona object definition
+  persona-schema.json            # tester/persona object definition
   rubric-schema.json             # rubric + criterion definition
   session-report-schema.json     # full run output schema
   sample-run.md                  # annotated example session
