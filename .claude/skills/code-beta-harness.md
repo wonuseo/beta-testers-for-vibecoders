@@ -1,3 +1,10 @@
+---
+name: code-beta-harness
+description: |
+  Synthetic beta program methodology for a code diff — plan a beta, define the best-case path, recruit quota-based synthetic testers, assign happy-path/edge-case/insight activities, collect evidence, triage, propose fixes, and decide ship/no-ship.
+  Used by the /code-beta command. Invoke when running a persona-driven beta test on a code change, or when the user asks for "code beta", "synthetic beta", "diff 베타테스트".
+---
+
 # code-beta-harness — Synthetic Beta Program Methodology
 
 This skill defines the methodology used by `/code-beta`. The command orchestrates; this skill explains *how* to design and run a synthetic beta program correctly.
@@ -5,8 +12,26 @@ This skill defines the methodology used by `/code-beta`. The command orchestrate
 The core loop is:
 
 ```text
-plan beta → define best-case path → recruit testers → assign happy-path and edge-case activities → collect evidence and developer insight → triage → fix/accept/defer → rerun → exit decision
+plan beta → split into tracks → define best-case path → recruit per-track testers → assign track activities → collect evidence and developer insight → triage per track → fix/accept/defer → rerun → exit decision
 ```
+
+---
+
+## Beta Tracks
+
+Every beta is organized into up to three purpose-driven **tracks**. A track is a self-contained mini-beta on the *same diff*, with its own sub-objective, tester subset, and report section. This keeps each run readable and lets the user dial into a single purpose.
+
+| Track | id | Purpose | Activity role | Default model lean |
+|---|---|---|---|---|
+| Edge cases | `edge` | bend/break the change — misuse, environment mismatch, integration friction, docs gaps | `edge_case_probe` | sonnet-leaning, stricter evidence |
+| Happy path | `happy` | real target-user feedback on the best-case path — does it actually feel good? | `happy_path_validation` | the primary segment, realistic context |
+| Diverse opinions | `diverse` | breadth of perspectives — overlooked risks, good signs to preserve, product ideas | `developer_insight` | many haiku across varied segments |
+
+Track selection rules:
+- **Default = all three.** Split the tester budget across them (roughly even, min 1 each). This is the well-rounded run.
+- **Subset** (positional `edge` / `happy` / `diverse`, or `--track`) redistributes the whole budget into the chosen tracks, so each runs deeper. `edge` = "this run is only about breaking it"; `happy` = "I just want to know if it feels good"; `diverse` = "give me many angles."
+- Every tester carries a `track` field, and its activity role is fixed by that track. A tester never mixes roles.
+- Aggregation and the session report roll up **per track first**, then overall.
 
 ---
 
@@ -159,9 +184,11 @@ If the runtime cannot enforce model selection per subagent, record intended mode
 
 | Mix | Tester count | Suggested split |
 |---|---:|---|
-| cheap | 4–8 | mostly Haiku, one Sonnet escalation slot |
+| cheap | 4–8 | mostly Haiku breadth, one Sonnet escalation slot |
 | balanced | 5–8 | Haiku breadth + 1–2 Sonnet high-risk testers |
 | deep | 6–10 | more Sonnet technical/security/API testers |
+
+**Tester count is the *total pool*, then split across active tracks** (min 1 per track; edge-track testers lean Sonnet, happy/diverse lean Haiku). So `--testers` must be ≥ the number of active tracks. Default `--testers 6` with all three tracks → **2 edge / 2 happy / 2 diverse**. If `--testers` is below the active-track count, raise it to the floor (one per track) and note it in the recruitment artifact rather than dropping a track.
 
 ---
 
@@ -216,7 +243,7 @@ Use a mix of activity roles so the harness is not only a bug-finder:
 | `edge_case_probe` | Find persona-specific confusion, misuse, environment mismatch, or docs gaps | CI integrator checks whether examples imply unsupported exit-code behavior |
 | `developer_insight` | Surface good signs, product ideas, and risks the developer may have missed | maintainer evaluates whether the report format creates actionable next steps |
 
-At least one tester should validate the best-case path. At least one tester should probe edge cases. For small `--testers 3` runs, the third tester can be either deep technical risk or developer insight depending on the diff.
+Each role maps 1:1 to a **track** (`happy`→`happy_path_validation`, `edge`→`edge_case_probe`, `diverse`→`developer_insight`). In a default all-tracks run, each active track gets at least one tester. When the user narrows to a single track via `--track`, all testers take that track's role and go deeper rather than spreading across roles.
 
 ---
 
@@ -438,6 +465,10 @@ Tester breakdown:
   ✓ tester-id    N/N  (initial: X/N, fixed)
   ✗ tester-id    X/N  (still failing — see evidence)
 ```
+
+**Closure-only rerun (targeted).** The post-fix rerun re-tests **only the criteria that originally failed**, against the same activity. Its single question is "did the fix close *this* finding?" — not "what else can I find?". This keeps verification honest and bounded.
+
+**Convergence — the harness must stop, not nitpick forever.** Beta testing on a fixed surface will *always* surface new, smaller observations; that does not mean the work is unfinished. New findings discovered during a closure rerun go to a **next-round backlog**, not back into the fix loop. Exit is declared when every *original* in-scope finding is closed, even if the backlog is non-empty. A clean closure with a non-empty backlog is a **successful** exit. Only the original P0/P1 (and user-approved P2/P3) gate completion.
 
 **If gap is not fully closed after one rerun:**
 - List still-failing criteria with evidence excerpts.
