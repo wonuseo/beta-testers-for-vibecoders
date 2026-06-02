@@ -1,13 +1,13 @@
 ---
-name: code-beta-harness
+name: betatest-harness
 description: |
   Synthetic beta program methodology for a code diff — plan a beta, define the best-case path, recruit quota-based synthetic testers, assign happy-path/edge-case/insight activities, collect evidence, triage, propose fixes, and decide ship/no-ship.
-  Used by the /code-beta command. Invoke when running a persona-driven beta test on a code change, or when the user asks for "code beta", "synthetic beta", "diff 베타테스트".
+  Used by the /betatest command. Invoke when running a persona-driven beta test on a code change, or when the user asks for "code beta", "synthetic beta", "diff 베타테스트".
 ---
 
-# code-beta-harness — Synthetic Beta Program Methodology
+# betatest-harness — Synthetic Beta Program Methodology
 
-This skill defines the methodology used by `/code-beta`. The command orchestrates; this skill explains *how* to design and run a synthetic beta program correctly.
+This skill defines the methodology used by `/betatest`. The command orchestrates; this skill explains *how* to design and run a synthetic beta program correctly.
 
 The core loop is:
 
@@ -100,7 +100,7 @@ A strong best-case path answers:
 - **Success signal:** what would convince the developer this path is real, not just imagined?
 
 Good examples:
-- "A first-time vibe coder copies the harness, starts a new Claude Code session, runs `/code-beta`, and receives a concise ship/no-ship report without reading internals."
+- "A first-time vibe coder copies the harness, starts a new Claude Code session, runs `/betatest`, and receives a concise ship/no-ship report without reading internals."
 - "A maintainer reads a generated beta report and immediately sees one docs gap, one non-blocking edge case, and one good design choice to preserve."
 
 The best-case path is not a sales pitch. It is the reference path that testers validate, bend, and challenge.
@@ -209,9 +209,9 @@ A beta activity is a task that mirrors real beta testing:
   "activity_id": "install-and-run-command",
   "tester_id": "first-time-cli-user",
   "role": "happy_path_validation",
-  "task": "Start from README, copy the harness into a project, then attempt to run /code-beta on HEAD~1..HEAD.",
+  "task": "Start from README, copy the harness into a project, then attempt to run /betatest on HEAD~1..HEAD.",
   "starting_context": ["README.md"],
-  "allowed_context": ["README.md", "examples/", ".claude/commands/code-beta.md only if discovered through docs"],
+  "allowed_context": ["README.md", "examples/", ".claude/commands/betatest.md only if discovered through docs"],
   "forbidden_context": ["internal design notes", "previous session reports"],
   "commands": ["git diff --stat", "git status"],
   "evidence_required": ["steps attempted", "expected", "actual", "blocking error", "severity", "repro", "recommendation"]
@@ -265,7 +265,7 @@ Each role maps 1:1 to a **track** (`happy`→`happy_path_validation`, `edge`→`
 ```
 
 Examples:
-- `first-time-cli-user follows README quickstart → can tell a new Claude Code session is required before /code-beta appears`
+- `first-time-cli-user follows README quickstart → can tell a new Claude Code session is required before /betatest appears`
 - `mid-session-user sees Unknown command → can recover using documented manual fallback without restarting`
 - `ci-integrator reads YAML example → understands it is report-only until exit-code support ships`
 - `api-consumer calls POST /auth/token with wrong password → receives 401 with JSON body { error, error_code }`
@@ -350,7 +350,7 @@ Guidelines:
   "expected": "User can recover from Unknown command",
   "actual": "README does not mention command discovery timing",
   "evidence": "README.md:44 only says copy files, no restart warning",
-  "reproduction": ["Copy command file mid-session", "Type /code-beta", "Observe Unknown command"],
+  "reproduction": ["Copy command file mid-session", "Type /betatest", "Observe Unknown command"],
   "recommendation": "Add restart warning and manual fallback"
 }
 ```

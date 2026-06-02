@@ -7,19 +7,19 @@ The harness is a stateless Claude Code slash command that orchestrates a synthet
 The core product shape is two-layer:
 
 ```text
-/code-beta setup  → beta plan + tester recruitment
-/code-beta run    → tester execution + evidence + triage + rerun
+/betatest setup  → beta plan + tester recruitment
+/betatest run    → tester execution + evidence + triage + rerun
 ```
 
-One-shot `/code-beta` executes both layers.
+One-shot `/betatest` executes both layers.
 
 ```text
-User invokes /code-beta
+User invokes /betatest
         │
         ▼
 ┌───────────────────┐
 │   Orchestrator    │  (Claude Code main agent, runs command file)
-│  code-beta.md     │
+│  betatest.md      │
 └─────────┬─────────┘
           │
           ▼
@@ -79,7 +79,7 @@ User invokes /code-beta
 ## Components
 
 ### Orchestrator
-The main Claude Code agent executing `.claude/commands/code-beta.md`. Coordinates steps, makes tool calls, spawns tester subagents, reads evidence, writes reports. Stateless per invocation except for `.harness/code-beta.config.json`.
+The main Claude Code agent executing `.claude/commands/betatest.md`. Coordinates steps, makes tool calls, spawns tester subagents, reads evidence, writes reports. Stateless per invocation except for `.harness/betatest.config.json`.
 
 ### Diff Reader
 Runs `git diff` to extract the changeset. Produces: list of changed files, line ranges, change type classification, and likely user-visible or maintainer-visible surfaces.
@@ -139,7 +139,7 @@ Default tester count: 6. Typical run: 6 initial testers + rerun failed/unclear t
 
 | Path | Written when |
 |------|-------------|
-| `.harness/code-beta.config.json` | Setup writes repeatable beta config |
+| `.harness/betatest.config.json` | Setup writes repeatable beta config |
 | `.harness/runs/<run_id>/beta-plan.md` | Setup |
 | `.harness/runs/<run_id>/scope-map.json` | Setup |
 | `.harness/runs/<run_id>/risk-map.json` | Setup |
@@ -157,7 +157,7 @@ Default tester count: 6. Typical run: 6 initial testers + rerun failed/unclear t
 
 ## Configuration (target repo)
 
-Primary file: `.harness/code-beta.config.json`
+Primary file: `.harness/betatest.config.json`
 
 This stores:
 - target diff

@@ -13,24 +13,24 @@ Session: docs/beta-sessions/2026-05-29-15-00.md
 
 ---
 
-## Fix 1: `.claude/commands/code-beta.md`
+## Fix 1: `.claude/commands/betatest.md`
 
 **Criterion:** vi-3
 
-**Why this fixes it:** The command previously said "Use the `code-beta-harness` skill" without ever instructing Claude to read the file. The preamble makes the dependency explicit and file-path-based.
+**Why this fixes it:** The command previously said "Use the `betatest-harness` skill" without ever instructing Claude to read the file. The preamble makes the dependency explicit and file-path-based.
 
 **Change:**
 ```diff
  ## Workflow
 -
--Follow these steps in order. Use the `code-beta-harness` skill for the methodology behind each step.
+-Follow these steps in order. Use the `betatest-harness` skill for the methodology behind each step.
 +
-+**Before executing any step:** Read `.claude/skills/code-beta-harness.md` in full. All references
++**Before executing any step:** Read `.claude/skills/betatest-harness.md` in full. All references
 +to "the methodology" below point to sections in that file. Reading it now avoids missing-skill
 +errors if the file was added mid-session or the skill is not registered.
 +
 +```
-+Read: .claude/skills/code-beta-harness.md
++Read: .claude/skills/betatest-harness.md
 +```
 +
 +Follow these steps in order.
@@ -46,19 +46,19 @@ Session: docs/beta-sessions/2026-05-29-15-00.md
 
 **Why this fixes it:** The Quickstart had no session caveat and the repo had no troubleshooting section. Users who hit "unknown command" had no documented recovery path. The `> Important:` callout and Troubleshooting section address all three gaps in one place.
 
-**Change:** Added after the `/code-beta` invocation examples in Quickstart:
+**Change:** Added after the `/betatest` invocation examples in Quickstart:
 ```diff
 +> **Important:** Claude Code only discovers command files at session start. If you copied
-+> the files into an already-open session, `/code-beta` won't be available until you start
++> the files into an already-open session, `/betatest` won't be available until you start
 +> a new session.
 +
 +## Troubleshooting
 +
-+**`/code-beta` shows as unknown command**
++**`/betatest` shows as unknown command**
 +...
 +**Option 2 — Invoke manually without restarting**: Paste this into the Claude Code chat:
-+"Read .claude/commands/code-beta.md and .claude/skills/code-beta-harness.md, then follow
-+the workflow defined in code-beta.md on the diff HEAD~1..HEAD."
++"Read .claude/commands/betatest.md and .claude/skills/betatest-harness.md, then follow
++the workflow defined in betatest.md on the diff HEAD~1..HEAD."
 ```
 
 **Potential side effects:** None. Additive documentation only.
@@ -88,9 +88,9 @@ Session: docs/beta-sessions/2026-05-29-15-00.md
 -**CI integration pattern:**
 -```yaml
 -# .github/workflows/beta-test.yml
--- name: Run /code-beta
+-- name: Run /betatest
 -  run: |
--    claude -p "/code-beta --diff ..."  --output-format markdown > beta-report.md
+-    claude -p "/betatest --diff ..."  --output-format markdown > beta-report.md
 -  # Posts report as PR comment; fails CI if gap > 0
 -```
 +**CI integration pattern (Phase 4 — not yet implemented):**

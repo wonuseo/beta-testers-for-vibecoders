@@ -2,7 +2,7 @@
 
 A Claude Code-native harness that turns a code diff into a useful synthetic beta run: best-case path, persona edge cases, missed risks, good signs, and concrete next fixes.
 
-No external service. No CI pipeline. No test script required. Just copy two Claude files into a repo and run `/code-beta`.
+No external service. No CI pipeline. No test script required. Just copy two Claude files into a repo and run `/betatest`.
 
 ## Why this exists
 
@@ -16,9 +16,9 @@ Vibecoders ship fast. The risky part is not only “does the code compile?” It
 
 Traditional tests catch what you predicted. A beta run should also reveal what you did not know to ask.
 
-## What `/code-beta` does
+## What `/betatest` does
 
-`/code-beta` runs a lightweight synthetic beta program on your current change.
+`/betatest` runs a lightweight synthetic beta program on your current change.
 
 ```text
 plan beta
@@ -50,51 +50,51 @@ Copy the harness into your project:
 
 ```bash
 mkdir -p /your-project/.claude/commands /your-project/.claude/skills
-cp .claude/commands/code-beta.md        /your-project/.claude/commands/code-beta.md
-cp .claude/skills/code-beta-harness.md  /your-project/.claude/skills/code-beta-harness.md
+cp .claude/commands/betatest.md        /your-project/.claude/commands/betatest.md
+cp .claude/skills/betatest-harness.md  /your-project/.claude/skills/betatest-harness.md
 ```
 
 Open a new Claude Code session in the target project, then run:
 
 ```text
-/code-beta --diff HEAD~1..HEAD --testers 4
+/betatest --diff HEAD~1..HEAD --testers 4
 ```
 
 Scope a run to a single track — just type its name (positional shorthand):
 
 ```text
-/code-beta edge              # only break/bend the change
-/code-beta happy             # only happy-path user feedback
-/code-beta diverse           # only diverse perspectives / insight
-/code-beta edge,diverse      # two tracks (comma, no spaces)
-/code-beta                   # all three tracks (default)
+/betatest edge              # only break/bend the change
+/betatest happy             # only happy-path user feedback
+/betatest diverse           # only diverse perspectives / insight
+/betatest edge,diverse      # two tracks (comma, no spaces)
+/betatest                   # all three tracks (default)
 ```
 
 Or use the two-step flow:
 
 ```text
-/code-beta setup --diff HEAD~1..HEAD --testers 4
-/code-beta run --diff HEAD~1..HEAD
+/betatest setup --diff HEAD~1..HEAD --testers 4
+/betatest run --diff HEAD~1..HEAD
 ```
 
 Useful variants:
 
 ```text
-/code-beta setup --focus onboarding --testers 3 --mix cheap
-/code-beta setup --focus security --testers 6 --mix deep --tester-model sonnet
-/code-beta edge --testers 10        # positional track + flags mix freely
-/code-beta run --fix
-/code-beta --dry-run
+/betatest setup --focus onboarding --testers 3 --mix cheap
+/betatest setup --focus security --testers 6 --mix deep --tester-model sonnet
+/betatest edge --testers 10        # positional track + flags mix freely
+/betatest run --fix
+/betatest --dry-run
 ```
 
-> Claude Code discovers slash commands only when a session starts. If `/code-beta` is unknown after copying the files, restart Claude Code or use the manual fallback below.
+> Claude Code discovers slash commands only when a session starts. If `/betatest` is unknown after copying the files, restart Claude Code or use the manual fallback below.
 
 ## Manual fallback
 
 If the command was copied into an already-open Claude Code session, paste this into Claude Code:
 
 ```text
-Read .claude/commands/code-beta.md and .claude/skills/code-beta-harness.md, then follow the workflow defined in code-beta.md on the diff HEAD~1..HEAD.
+Read .claude/commands/betatest.md and .claude/skills/betatest-harness.md, then follow the workflow defined in betatest.md on the diff HEAD~1..HEAD.
 ```
 
 The command is plain markdown instructions, so Claude can follow it directly even before slash-command registration.
@@ -102,14 +102,14 @@ The command is plain markdown instructions, so Claude can follow it directly eve
 ## Example output
 
 ```text
-/code-beta --diff HEAD~1..HEAD --testers 4
+/betatest --diff HEAD~1..HEAD --testers 4
 
 Best-case path:
   Primary user: first-time vibe coder adding the harness to a repo
   Happy path:
     1. Copy command + skill files
     2. Restart Claude Code
-    3. Run /code-beta on the current diff
+    3. Run /betatest on the current diff
     4. Read a concise ship/no-ship report
   Value delivered: catches docs/onboarding gaps before the change ships
   Status: partially validated
@@ -127,7 +127,7 @@ Results:
   ✓ maintainer-reviewer      3/3
 
 Persona edge cases:
-  - mid-session-user: copies files during an active Claude session and expects /code-beta to appear immediately.
+  - mid-session-user: copies files during an active Claude session and expects /betatest to appear immediately.
   - ci-integrator: may assume the report creates a hard CI gate even when the docs only promise a report.
 
 Missed risks:
@@ -269,8 +269,8 @@ Beta testing a fixed surface will always surface new, smaller observations — t
 
 ```text
 .claude/
-  commands/code-beta.md          # /code-beta slash command
-  skills/code-beta-harness.md    # beta run methodology
+  commands/betatest.md          # /betatest slash command
+  skills/betatest-harness.md    # beta run methodology
 examples/
   persona-schema.json            # recruited tester schema
   rubric-schema.json             # activity/rubric schema
@@ -284,6 +284,6 @@ docs/
 
 ## Status
 
-Working harness. The primary artifact is the Claude Code command/skill pair (`/code-beta` + `code-beta-harness`). It supports three beta tracks, 3-stage reporting, and a closure-only rerun with a convergence rule. The design principle is **useful harness first**: borrow good patterns from real user testing, then adapt them to code diffs, vibe-coding, and release preparation.
+Working harness. The primary artifact is the Claude Code command/skill pair (`/betatest` + `betatest-harness`). It supports three beta tracks, 3-stage reporting, and a closure-only rerun with a convergence rule. The design principle is **useful harness first**: borrow good patterns from real user testing, then adapt them to code diffs, vibe-coding, and release preparation.
 
-The harness is developed by dogfooding it on its own changes — most features above were found and refined by running `/code-beta` against its own diffs.
+The harness is developed by dogfooding it on its own changes — most features above were found and refined by running `/betatest` against its own diffs.

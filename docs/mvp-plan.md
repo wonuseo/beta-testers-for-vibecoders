@@ -2,7 +2,7 @@
 
 ## Goal
 
-Ship a working `/code-beta` command that a vibe-coder can drop into any repo and run on a diff to get useful synthetic beta-program feedback in under 5 minutes.
+Ship a working `/betatest` command that a vibe-coder can drop into any repo and run on a diff to get useful synthetic beta-program feedback in under 5 minutes.
 
 "Useful" means: at least one real bug, docs/UX gap, integration risk, or release blocker identified that the developer would not have caught by reading the code themselves.
 
@@ -10,7 +10,7 @@ Ship a working `/code-beta` command that a vibe-coder can drop into any repo and
 
 ## Product shape
 
-`/code-beta` should mirror real beta program management:
+`/betatest` should mirror real beta program management:
 
 ```text
 plan beta → recruit testers → assign activities → collect evidence → triage → fix/accept/defer → rerun → exit decision
@@ -19,14 +19,14 @@ plan beta → recruit testers → assign activities → collect evidence → tri
 Two-layer UX:
 
 ```text
-/code-beta setup --diff HEAD~1..HEAD --testers 6
-/code-beta run --diff HEAD~1..HEAD
+/betatest setup --diff HEAD~1..HEAD --testers 6
+/betatest run --diff HEAD~1..HEAD
 ```
 
 One-shot remains supported:
 
 ```text
-/code-beta --diff HEAD~1..HEAD --testers 6
+/betatest --diff HEAD~1..HEAD --testers 6
 ```
 
 Default model policy:
@@ -47,7 +47,7 @@ Default model policy:
 **What ships:** Command file, skill file, schemas, docs, and two-layer setup/run instructions.
 
 **What works:**
-- `/code-beta setup --diff HEAD~1..HEAD`
+- `/betatest setup --diff HEAD~1..HEAD`
 - beta objective and beta type selection
 - quota-based tester recruitment
 - model policy recording: planner/recruiter Opus, testers Haiku/Sonnet, triage Sonnet
@@ -60,14 +60,14 @@ Default model policy:
 - Actual per-subagent model enforcement may depend on Claude Code runtime capability; artifacts record intended model policy even when runtime cannot enforce it.
 - Fix proposals are described but not battle-tested.
 - `--fix` auto-apply is described but untested.
-- `.harness/code-beta.config.json` persistence is specified but not yet backed by a standalone runner.
+- `.harness/betatest.config.json` persistence is specified but not yet backed by a standalone runner.
 
 **Success metric:** Running on 3 sample diffs produces at least one accurate finding per run with reproducible evidence and correct severity.
 
 **How to validate:**
 1. Take 3 real PRs from open-source repos with known bugs or docs gaps.
-2. Run `/code-beta setup` and inspect beta plan/recruitment quality.
-3. Run `/code-beta run` on each diff.
+2. Run `/betatest setup` and inspect beta plan/recruitment quality.
+3. Run `/betatest run` on each diff.
 4. Check if the harness identifies the known issue as a FAIL/UNCLEAR with evidence.
 5. Adjust beta setup, recruitment, and activity prompts until hit rate ≥ 2/3.
 
@@ -95,8 +95,8 @@ Default model policy:
 **Prerequisite:** Phase 2 validated.
 
 **What ships:**
-- `.harness/code-beta.config.json` as first-class saved setup
-- `/code-beta setup --save` and `/code-beta run` using saved config
+- `.harness/betatest.config.json` as first-class saved setup
+- `/betatest setup --save` and `/betatest run` using saved config
 - custom tester pool loading
 - tester refinement loop: user edits config and reruns
 - per-project stable beta segments for repeated diffs
@@ -118,12 +118,12 @@ Default model policy:
 
 ```yaml
 # .github/workflows/beta-test.yml  (Phase 4 target — not yet functional)
-- name: Run /code-beta
+- name: Run /betatest
   env:
     BASE_REF: ${{ github.base_ref }}
     HEAD_REF: ${{ github.head_ref }}
   run: |
-    claude -p "/code-beta --diff ${BASE_REF}...${HEAD_REF} --testers 6" \
+    claude -p "/betatest --diff ${BASE_REF}...${HEAD_REF} --testers 6" \
            --output-format markdown > beta-report.md
     # Phase 4: claude will exit 1 when unresolved P0/P1 remains.
     # Until then, gate on grep: grep -q "Gap closed: no" beta-report.md && exit 1 || exit 0
