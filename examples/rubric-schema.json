@@ -45,7 +45,7 @@
           "statement": {
             "$comment": "Format: [tester] [activity/action] → [observable outcome]. Must be falsifiable under the tester context policy.",
             "type": "string",
-            "example": "first-time-cli-user follows README quickstart → can tell a new Claude Code session is required before /code-beta appears"
+            "example": "first-time-cli-user follows README quickstart → can tell a new Claude Code session is required before /betatest appears"
           },
           "rationale": {
             "$comment": "One sentence: why this criterion matters for this tester and diff.",
@@ -73,7 +73,7 @@
             },
             "example": [
               "README.md",
-              ".claude/commands/code-beta.md"
+              ".claude/commands/betatest.md"
             ]
           }
         }
@@ -96,7 +96,7 @@
     "criteria": [
       {
         "id": "restart-warning-discoverable",
-        "statement": "first-time-cli-user follows README quickstart → can tell a new Claude Code session is required before /code-beta appears",
+        "statement": "first-time-cli-user follows README quickstart → can tell a new Claude Code session is required before /betatest appears",
         "rationale": "Command files copied mid-session are not registered until restart; this is a first-run blocker.",
         "evidenceRequired": [
           "README quote",
@@ -118,7 +118,7 @@
         ],
         "relevantFiles": [
           "README.md",
-          ".claude/commands/code-beta.md"
+          ".claude/commands/betatest.md"
         ]
       }
     ],

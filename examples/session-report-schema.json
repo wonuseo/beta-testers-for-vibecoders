@@ -1,5 +1,5 @@
 {
-  "$comment": "Schema for a complete /code-beta session report. Written to docs/beta-sessions/YYYY-MM-DD-HH-MM.md as markdown; this JSON schema describes the underlying data model.",
+  "$comment": "Schema for a complete /betatest session report. Written to docs/beta-sessions/YYYY-MM-DD-HH-MM.md as markdown; this JSON schema describes the underlying data model.",
   "type": "object",
   "required": [
     "sessionId",
@@ -40,7 +40,7 @@
           },
           "example": [
             "README.md",
-            ".claude/commands/code-beta.md",
+            ".claude/commands/betatest.md",
             ".claude/skills/code-beta-harness.md"
           ]
         },

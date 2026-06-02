@@ -3,7 +3,7 @@ description: 코드 diff에 합성 베타테스트 실행 — 베타 계획·페
 argument-hint: "[edge|happy|diverse] [setup|run] [--diff <range>] [--testers <n>] [--fix] [--dry-run] ..."
 ---
 
-# /code-beta — Synthetic Beta Program Harness
+# /betatest — Synthetic Beta Program Harness
 
 Run a Claude Code-native beta program on a code diff. The harness now has two layers:
 
@@ -15,28 +15,28 @@ No external services. The product surface is the Claude Code slash command plus 
 ## Usage
 
 ```text
-/code-beta [track] [options]        # one-shot: setup + run
-/code-beta setup [track] [options]  # design beta plan + tester recruitment brief
-/code-beta run [track] [options]    # execute recruited testers from saved config
+/betatest [track] [options]        # one-shot: setup + run
+/betatest setup [track] [options]  # design beta plan + tester recruitment brief
+/betatest run [track] [options]    # execute recruited testers from saved config
 ```
 
 `[track]` is an optional positional shorthand for a beta track — just type the name:
 
 ```text
-/code-beta edge              # edge-case run only (= --track edge)
-/code-beta happy             # happy-path feedback run only
-/code-beta diverse           # diverse-opinions run only
-/code-beta edge,diverse      # two tracks (comma-separated, no spaces)
-/code-beta                   # all three tracks (default)
-/code-beta setup edge        # setup-only, edge track
-/code-beta edge --testers 10 # positional track + flags mix freely
+/betatest edge              # edge-case run only (= --track edge)
+/betatest happy             # happy-path feedback run only
+/betatest diverse           # diverse-opinions run only
+/betatest edge,diverse      # two tracks (comma-separated, no spaces)
+/betatest                   # all three tracks (default)
+/betatest setup edge        # setup-only, edge track
+/betatest edge --testers 10 # positional track + flags mix freely
 ```
 
 Both of these also work (separate tokens, any order) — but the comma form is canonical:
 
 ```text
-/code-beta edge happy        # ✓ two separate track tokens, unioned
-/code-beta edge, diverse     # ✗ space after comma — use edge,diverse
+/betatest edge happy        # ✓ two separate track tokens, unioned
+/betatest edge, diverse     # ✗ space after comma — use edge,diverse
 ```
 
 Argument parsing — classify each token **by what it is, not where it sits**:
@@ -272,7 +272,7 @@ For each tester, generate one concrete beta activity and 2–5 falsifiable crite
 A beta activity is not a vague review. It is a task like:
 
 ```text
-Start from README only. Try to discover and run /code-beta on HEAD~1..HEAD. Record the exact step where you get blocked.
+Start from README only. Try to discover and run /betatest on HEAD~1..HEAD. Record the exact step where you get blocked.
 ```
 
 Each activity must specify:

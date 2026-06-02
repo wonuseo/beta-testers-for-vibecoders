@@ -121,7 +121,7 @@
       "docs/beta-sessions/"
     ],
     "activityId": "install-and-run-command",
-    "successCondition": "Can discover and run /code-beta or recover from Unknown command without hidden internal knowledge",
+    "successCondition": "Can discover and run /betatest or recover from Unknown command without hidden internal knowledge",
     "recruitedBecause": "The harness is copied into projects and command discovery timing is a known first-run risk.",
     "activityRole": "happy_path_validation"
   }

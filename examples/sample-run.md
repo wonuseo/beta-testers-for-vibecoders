@@ -1,6 +1,6 @@
 # Sample Run: Auth Session Refresh Bug
 
-This annotated example shows what a `/code-beta` run looks like end-to-end.
+This annotated example shows what a `/betatest` run looks like end-to-end.
 The target repo is a Next.js SaaS app. The diff fixes a reported bug where users get
 silently logged out when their session token expires.
 
@@ -9,7 +9,7 @@ silently logged out when their session token expires.
 ## Invocation
 
 ```
-/code-beta --diff HEAD~1..HEAD
+/betatest --diff HEAD~1..HEAD
 ```
 
 ---
