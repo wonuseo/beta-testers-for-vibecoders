@@ -41,7 +41,7 @@
           "example": [
             "README.md",
             ".claude/commands/betatest.md",
-            ".claude/skills/code-beta-harness.md"
+            ".claude/skills/betatest-harness.md"
           ]
         },
         "changeType": {

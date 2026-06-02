@@ -117,7 +117,7 @@
       "examples/"
     ],
     "forbiddenInitialContext": [
-      ".claude/skills/code-beta-harness.md",
+      ".claude/skills/betatest-harness.md",
       "docs/beta-sessions/"
     ],
     "activityId": "install-and-run-command",

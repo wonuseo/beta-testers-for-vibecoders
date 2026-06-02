@@ -60,7 +60,7 @@ Default model policy:
 - Actual per-subagent model enforcement may depend on Claude Code runtime capability; artifacts record intended model policy even when runtime cannot enforce it.
 - Fix proposals are described but not battle-tested.
 - `--fix` auto-apply is described but untested.
-- `.harness/code-beta.config.json` persistence is specified but not yet backed by a standalone runner.
+- `.harness/betatest.config.json` persistence is specified but not yet backed by a standalone runner.
 
 **Success metric:** Running on 3 sample diffs produces at least one accurate finding per run with reproducible evidence and correct severity.
 
@@ -95,7 +95,7 @@ Default model policy:
 **Prerequisite:** Phase 2 validated.
 
 **What ships:**
-- `.harness/code-beta.config.json` as first-class saved setup
+- `.harness/betatest.config.json` as first-class saved setup
 - `/betatest setup --save` and `/betatest run` using saved config
 - custom tester pool loading
 - tester refinement loop: user edits config and reruns

@@ -51,7 +51,7 @@ Copy the harness into your project:
 ```bash
 mkdir -p /your-project/.claude/commands /your-project/.claude/skills
 cp .claude/commands/betatest.md        /your-project/.claude/commands/betatest.md
-cp .claude/skills/code-beta-harness.md  /your-project/.claude/skills/code-beta-harness.md
+cp .claude/skills/betatest-harness.md  /your-project/.claude/skills/betatest-harness.md
 ```
 
 Open a new Claude Code session in the target project, then run:
@@ -94,7 +94,7 @@ Useful variants:
 If the command was copied into an already-open Claude Code session, paste this into Claude Code:
 
 ```text
-Read .claude/commands/betatest.md and .claude/skills/code-beta-harness.md, then follow the workflow defined in betatest.md on the diff HEAD~1..HEAD.
+Read .claude/commands/betatest.md and .claude/skills/betatest-harness.md, then follow the workflow defined in betatest.md on the diff HEAD~1..HEAD.
 ```
 
 The command is plain markdown instructions, so Claude can follow it directly even before slash-command registration.
@@ -270,7 +270,7 @@ Beta testing a fixed surface will always surface new, smaller observations — t
 ```text
 .claude/
   commands/betatest.md          # /betatest slash command
-  skills/code-beta-harness.md    # beta run methodology
+  skills/betatest-harness.md    # beta run methodology
 examples/
   persona-schema.json            # recruited tester schema
   rubric-schema.json             # activity/rubric schema
@@ -284,6 +284,6 @@ docs/
 
 ## Status
 
-Working harness. The primary artifact is the Claude Code command/skill pair (`/betatest` + `code-beta-harness`). It supports three beta tracks, 3-stage reporting, and a closure-only rerun with a convergence rule. The design principle is **useful harness first**: borrow good patterns from real user testing, then adapt them to code diffs, vibe-coding, and release preparation.
+Working harness. The primary artifact is the Claude Code command/skill pair (`/betatest` + `betatest-harness`). It supports three beta tracks, 3-stage reporting, and a closure-only rerun with a convergence rule. The design principle is **useful harness first**: borrow good patterns from real user testing, then adapt them to code diffs, vibe-coding, and release preparation.
 
 The harness is developed by dogfooding it on its own changes — most features above were found and refined by running `/betatest` against its own diffs.

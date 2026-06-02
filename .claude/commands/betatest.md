@@ -122,12 +122,12 @@ If Claude Code cannot actually switch subagent models in the current environment
 
 ## Workflow
 
-**Before executing any step:** Read the `code-beta-harness` methodology skill in full. All references to "the methodology" below point to sections in that file. Reading it now avoids missing-skill errors. Prefer the user-global copy; fall back to a repo-local copy if present.
+**Before executing any step:** Read the `betatest-harness` methodology skill in full. All references to "the methodology" below point to sections in that file. Reading it now avoids missing-skill errors. Prefer the user-global copy; fall back to a repo-local copy if present.
 
 ```text
-Read: ~/.claude/skills/code-beta-harness/SKILL.md
+Read: ~/.claude/skills/betatest-harness/SKILL.md
 # fallback if the global copy is missing:
-Read: .claude/skills/code-beta-harness.md
+Read: .claude/skills/betatest-harness.md
 ```
 
 Follow these steps in order.
@@ -164,7 +164,7 @@ Summarize:
 
 First resolve which **tracks** are active (see "Beta tracks" above): the positional track arg or `--track` list, or all three (`edge`, `happy`, `diverse`) by default. Every later step is organized per active track.
 
-If command is `run` and `.harness/code-beta.config.json` exists, load it and skip to Step 4. Otherwise create a beta plan first.
+If command is `run` and `.harness/betatest.config.json` exists, load it and skip to Step 4. Otherwise create a beta plan first.
 
 Read bounded context only:
 - `README.md`
@@ -256,7 +256,7 @@ Write:
 ```text
 .harness/runs/<run_id>/tester-recruitment.md
 .harness/runs/<run_id>/personas.json
-.harness/code-beta.config.json
+.harness/betatest.config.json
 ```
 
 **→ Report Stage 1 (Plan) to the user now** (see "Reporting to the user — 3 stages"): target diff, active tracks, tester roster, best-case path. If `--dry-run` was provided, stop after this.

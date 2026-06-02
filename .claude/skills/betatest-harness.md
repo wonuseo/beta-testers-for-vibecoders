@@ -1,11 +1,11 @@
 ---
-name: code-beta-harness
+name: betatest-harness
 description: |
   Synthetic beta program methodology for a code diff — plan a beta, define the best-case path, recruit quota-based synthetic testers, assign happy-path/edge-case/insight activities, collect evidence, triage, propose fixes, and decide ship/no-ship.
   Used by the /betatest command. Invoke when running a persona-driven beta test on a code change, or when the user asks for "code beta", "synthetic beta", "diff 베타테스트".
 ---
 
-# code-beta-harness — Synthetic Beta Program Methodology
+# betatest-harness — Synthetic Beta Program Methodology
 
 This skill defines the methodology used by `/betatest`. The command orchestrates; this skill explains *how* to design and run a synthetic beta program correctly.
 

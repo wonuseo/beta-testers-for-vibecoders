@@ -9,7 +9,7 @@ Two files that target repos install:
 | File | Role |
 |------|------|
 | `.claude/commands/betatest.md` | The `/betatest` slash command — orchestration logic |
-| `.claude/skills/code-beta-harness.md` | Synthetic beta program methodology — referenced by the command |
+| `.claude/skills/betatest-harness.md` | Synthetic beta program methodology — referenced by the command |
 
 Everything else in this repo (docs, examples, schemas) supports development of those two files.
 
@@ -36,7 +36,7 @@ Everything else in this repo (docs, examples, schemas) supports development of t
 ## Development conventions
 
 - The command file (`.claude/commands/betatest.md`) is a workflow orchestrator. It should read like a recipe: steps, decisions, tool calls. Keep it action-oriented.
-- The skill file (`.claude/skills/code-beta-harness.md`) is a methodology reference. It defines *how* to design a beta plan, recruit testers, create activities, evaluate evidence, and triage gaps. The command file delegates to it.
+- The skill file (`.claude/skills/betatest-harness.md`) is a methodology reference. It defines *how* to design a beta plan, recruit testers, create activities, evaluate evidence, and triage gaps. The command file delegates to it.
 - Do not put detailed methodology in the command file or orchestration in the skill file.
 - Schemas in `examples/` use JSON with `$comment` fields. Keep them honest — if the command produces output, the schema should match.
 - All changes to the two distributable files should be tested by manually copying them into a sample project and running `/betatest` there.
@@ -48,13 +48,13 @@ Everything else in this repo (docs, examples, schemas) supports development of t
 ```bash
 # From this repo, run the harness on the scaffold commit range
 # (manual invocation — paste into Claude Code chat):
-# "Read .claude/commands/betatest.md and .claude/skills/code-beta-harness.md,
+# "Read .claude/commands/betatest.md and .claude/skills/betatest-harness.md,
 #  then follow the workflow on the diff HEAD~2..HEAD."
 ```
 
 **Steps:**
 
-1. Make your change to `.claude/commands/betatest.md` or `.claude/skills/code-beta-harness.md`.
+1. Make your change to `.claude/commands/betatest.md` or `.claude/skills/betatest-harness.md`.
 2. Use the **manual invocation fallback** (see README Troubleshooting) — paste the read+follow instruction into Claude Code chat with diff `HEAD~2..HEAD`. This avoids needing to restart your session.
 3. Compare: did setup produce a concrete beta objective/type? Did recruitment produce a quota-based tester pool with realistic context policies? Were activities concrete and evidence-based?
 4. Check the session report written to `docs/beta-sessions/` — compare gap closure to the baseline session.
